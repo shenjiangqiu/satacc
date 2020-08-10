@@ -41,6 +41,39 @@ void cache_interface::from_in_to_cache()
     if (!in_request_queue.empty() and miss_queue.size() < miss_size)
     {
         //TO-DO write access cache logic here!
-        
+        //step one: get addr for this request.
+
+        auto &req = in_request_queue.front();
+        auto &as = req.as;
+        auto type = req.type;
+        auto watcherId=req.watcherId;
+        auto clauseId=req.clauseId;
+        uint64_t addr;
+        switch (type)
+        {
+        case ReadType::ReadClauseData:
+            /* code */
+            
+            addr=as->get_clause_addr(watcherId);
+            addr+=clauseId*4;
+
+            break;
+        case ReadType::ReadClauseValue:
+            addr=as->get_clause_detail(watcherId)[clauseId];
+
+            break;
+        case ReadType::ReadWatcher:
+            addr=as->get_addr();
+            addr+=4*watcherId;
+            break;
+        case ReadType::WatcherReadValue:
+            addr=as->get_block_addr(watcherId);
+            break;
+
+        default:
+            break;
+        }
+
+        in_request_queue.pop_front();
     }
 }

@@ -2,3 +2,5 @@
 *.out
 *.lib
 *.so
+test/dramsim3.json
+test/dramsim3.txt

@@ -66,8 +66,19 @@ public:
     unsigned long long get_clause_addr(int index) const { return modified_clause_list_items.at(index); } //clause addr
     void add_clause_literal(int index, int literal) { clause_literals[index].push_back(literal); }       // for read
     auto &get_clause_literal(int index) { return clause_literals[index]; }
+    void add_block_addr(int index, uint64_t addr)
+    {
+        blocker_value_addr[index] = addr;
+    }
+
+    uint64_t get_block_addr(int index) const
+    {
+        return blocker_value_addr.at(index);
+    }
 
 private:
+    std::map<int, uint64_t> blocker_value_addr;
+
     unsigned long long clause_addr;
     int value;
     int watcher_size;
