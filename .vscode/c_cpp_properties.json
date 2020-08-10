@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/sjq/git/DRAMsim3/src",
+                "/home/sjq/git/DRAMsim3/ext/headers"
+            ],
+            "defines": [],
+            "compilerPath": "/home/sjq/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,145 @@
+#include "clause.h"
+#include "cache_interface.h"
+clause::clause(/* args */)
+{
+}
+
+clause::~clause()
+{
+}
+
+void clause::cycle()
+{
+    busy = false;
+    process_waiting_to_out();
+    value_waiting_to_mem_out();
+    data_waiting_to_mem_out();
+    mem_in_to_comp();
+    task_to_data_waiting();
+}
+
+void clause::task_to_data_waiting() //get the task and send to data waiting queue
+{
+    if (!in_task_queue.empty() and clause_data_read_waiting_queue.size() < data_size)
+    {
+        busy = true;
+
+        clause_data_read_waiting_queue.push_back(in_task_queue.front());
+        clause_data_read_waiting_queue.back().type = ReadType::ReadClauseData;
+        clause_data_read_waiting_queue.back().clauseId = 0;
+        in_task_queue.pop_front();
+    }
+}
+void clause::data_waiting_to_mem_out() // get from data_waiting queue, and get clause detail
+{
+    if (!clause_data_read_waiting_queue.empty())
+    {
+        busy = true;
+
+        auto &index = clause_data_read_waiting_queue.front().watcherId;
+        auto &clauseId = clause_data_read_waiting_queue.front().clauseId;
+        auto total_clause_size = clause_data_read_waiting_queue.front().as->get_clause_literal(index).size();
+        out_memory_read_queue.push_back(clause_data_read_waiting_queue.front());
+        out_memory_read_queue.back().type = ReadType::ReadClauseData;
+        clauseId += 16;
+        if (clauseId >= total_clause_size)
+        {
+            clause_data_read_waiting_queue.pop_front();
+        }
+    }
+}
+void clause::value_waiting_to_mem_out() // get from value_waiting, and get value details
+{
+    if (!clause_value_read_waiting_queue.empty())
+    {
+        busy = true;
+
+        auto &req = clause_value_read_waiting_queue.front();
+        auto &index = req.watcherId;
+        auto total_clasue_size = req.as->get_clause_literal(index).size();
+        auto &clauseId = req.clauseId;
+
+        out_memory_read_queue.push_back(req);
+        out_memory_read_queue.back().type = ReadType::ReadClauseValue;
+        clauseId += 1;
+
+        if (clauseId >= total_clasue_size)
+        {
+            clause_value_read_waiting_queue.pop_front();
+        }
+    }
+}
+void clause::mem_in_to_comp() //to value_waiting and process waiting
+{
+    if (!in_memory_resp_queue.empty())
+    {
+        auto &req = in_memory_resp_queue.front();
+        auto type = req.type;
+        auto watcherId = req.watcherId;
+        auto clauseId = req.clauseId;
+        auto ass = req.as;
+        auto total_clause_size = ass->get_clause_literal(watcherId).size();
+        if (type == ReadType::ReadClauseData and
+            clause_value_read_waiting_queue.size() < data_size)
+        {
+            busy = true;
+
+            if (clauseId + 16 >= total_clause_size)
+            {
+                //the last one
+                auto new_req = req;
+                new_req.type = ReadType::ReadClauseValue;
+                new_req.clauseId = 0;
+                clause_value_read_waiting_queue.push_back(new_req);
+            }
+            in_memory_resp_queue.pop_front();
+        }
+        else if (clause_process_waiting_queue.size() < process_size)
+        {
+            busy = true;
+
+            //type is value read
+            if (clauseId + 1 >= total_clause_size) //the last one
+            {
+                auto new_req = req;
+                new_req.clauseId = 0;
+                clause_process_waiting_queue.push_back(new_req);
+            }
+            in_memory_resp_queue.pop_front();
+        }
+    }
+}
+
+void clause::process_waiting_to_out() //process the clause and send out
+{
+    if (!clause_process_waiting_queue.empty())
+    {
+        busy = true;
+
+        auto &req = clause_process_waiting_queue.front();
+        auto type = req.type;
+        auto watcherId = req.watcherId;
+        auto &clauseId = req.clauseId;
+        auto ass = req.as;
+        auto total_clause_size = ass->get_clause_literal(watcherId).size();
+
+        clauseId += 1;
+        if (clauseId >= total_clause_size) //the last one
+        {
+            auto new_req = req;
+            new_req.clauseId = 0;
+            if (ass->get_generated(watcherId) != nullptr)
+            {
+                new_req.as = ass->get_generated(watcherId);
+                new_req.watcherId = 0;
+                new_req.clauseId = 0;
+                new_req.type = ReadType::ReadWatcher;
+                out_queue.push_back(new_req);
+            }
+            clause_process_waiting_queue.pop_front();
+        }
+        //else just continue, we are processing...;
+
+        /* code */
+    }
+}
