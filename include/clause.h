@@ -10,23 +10,38 @@ class clause : public componet
 
 private:
     /* data */
-    int ref_size = 64;
-    int data_size = 64;
-    int value_size = 64;
-    int process_size = 64;
-    void task_to_data_waiting();     //get the task and send to data waiting queue
-    void data_waiting_to_mem_out();  // get from data_waiting queue, and get clause detail
-    void value_waiting_to_mem_out(); // get from value_waiting, and get value details
-    void mem_in_to_comp();           //to value_waiting and process waiting
+    unsigned ref_size = 64;
+    unsigned data_size = 64;
+    unsigned value_size = 64;
+    unsigned process_size = 64;
+    unsigned in_size = 64;
+    unsigned in_mem_size = 64;
+    bool task_to_data_waiting();     //get the task and send to data waiting queue
+    bool data_waiting_to_mem_out();  // get from data_waiting queue, and get clause detail
+    bool value_waiting_to_mem_out(); // get from value_waiting, and get value details
+    bool mem_in_to_comp();           //to value_waiting and process waiting
 
-    void process_waiting_to_out(); //process the clause and send out
+    bool process_waiting_to_out(); //process the clause and send out
 
     std::deque<cache_interface_req> clause_data_read_waiting_queue;
     std::deque<cache_interface_req> clause_value_read_waiting_queue;
     std::deque<cache_interface_req> clause_process_waiting_queue;
 
 public:
-    void cycle() override;
+    bool empty()
+    {
+        return clause_data_read_waiting_queue.empty() and clause_value_read_waiting_queue.empty() and clause_process_waiting_queue.empty() and in_memory_resp_queue.empty() and
+               in_task_queue.empty() and out_memory_read_queue.empty() and out_queue.empty();
+    }
+    bool recieve_rdy()
+    {
+        return in_task_queue.size() < in_size;
+    }
+    bool recieve_mem_rdy()
+    {
+        return in_memory_resp_queue.size() < in_mem_size;
+    }
+    bool cycle() override;
     clause(/* args */);
     ~clause();
 

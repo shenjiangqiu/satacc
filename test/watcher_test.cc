@@ -1,6 +1,6 @@
 #include "catch.hpp"
 #include "watcher.h"
-TEST_CASE("watcher_test", "[test1]")
+TEST_CASE("watcher_test", "[basic][core][componet]")
 {
     watcher m_watcher;
     assign_wrap_factory af;
@@ -20,7 +20,7 @@ TEST_CASE("watcher_test", "[test1]")
     m_watcher.in_task_queue.push_back(req2);
 
     m_watcher.cycle(); //not the request is in out_memory_read_queue
-
+    REQUIRE(m_watcher.out_memory_read_queue.size() > 0);
     REQUIRE(m_watcher.out_memory_read_queue.front().type == ReadType::ReadWatcher);
     REQUIRE(m_watcher.out_memory_read_queue.front().as == new_wrap1);
 

@@ -43,9 +43,9 @@ OSTYPE &operator<<(OSTYPE &os, const ReadType &req)
 struct cache_interface_req
 {
     cache_interface_req(ReadType t,
-                        int w,
-                        int cl,
-                        int co,
+                        unsigned w,
+                        unsigned cl,
+                        unsigned co,
                         assign_wrap *a) : type(t),
                                           watcherId(w),
                                           clauseId(cl),
@@ -60,9 +60,9 @@ struct cache_interface_req
                as == other.as;
     }
     ReadType type;
-    int watcherId;
-    int clauseId;
-    int ComponentId;
+    unsigned watcherId;
+    unsigned clauseId;
+    unsigned ComponentId;
     assign_wrap *as;
     /* data */
 };
@@ -76,28 +76,40 @@ OSTYPE &operator<<(OSTYPE &os, const cache_interface_req &req)
 class cache_interface : public componet
 {
 private:
-    int delay_q_size = 64;
-    int miss_size = 64;
+    unsigned cache_delay = 6;
+    unsigned delay_q_size = 64;
+    unsigned miss_size = 64;
+    unsigned in_size = 64;
     cache m_cache;
     dramsim3::MemorySystem m_mem;
 
-    std::map<uint32_t, std::vector<cache_interface_req>> addr_to_req;
+    std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;
 
-    std::deque<std::pair<uint32_t, cache_interface_req>> delay_resp_queue;
-    std::deque<uint32_t> miss_queue;
+    std::deque<std::pair<uint64_t, cache_interface_req>> delay_resp_queue;
+    std::deque<uint64_t> miss_queue;
 
-    std::deque<uint32_t> dram_resp_queue;
+    std::deque<uint64_t> dram_resp_queue;
 
-    void cycle() override;
-    void from_in_to_cache();
-    void from_miss_q_to_dram();
-    void from_dramresp_to_resp();
+    bool from_in_to_cache();
+    bool from_miss_q_to_dram();
+    bool from_dramresp_to_resp();
+    bool from_delayresp_to_out();
 
     void read_call_back(uint64_t addr);
     void write_call_back(uint64_t addr);
     /* data */
 public:
-    cache_interface(/* args */);
+    bool empty()
+    {
+        return delay_resp_queue.empty() and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and
+               in_request_queue.empty() and out_resp_queue.empty();
+    }
+    bool cycle() override;
+    bool recieve_rdy()
+    {
+        return in_request_queue.size() < in_size;
+    }
+    cache_interface(int cache_set_assositive, int cache_num_sets, int cache_mshr_entries, int cache_mshr_maxmerge);
     ~cache_interface();
 
     //interfaces

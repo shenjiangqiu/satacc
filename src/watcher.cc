@@ -8,19 +8,19 @@ watcher::~watcher()
 {
 }
 
-void watcher::cycle()
+bool watcher::cycle()
 {
-    busy=false;
+    bool busy = false;
 
     //from waiting_value_watcher_queue to out_memory_read_queue,
     //notice: each time only read one value, because they are not continued
-    //notice: waiting_value_watcher_queue only contain each assign once,so when\
-    the memory return, only if we recieve the last package, we push to the \
-    waiting_value_watcher_queue
+    /*notice: waiting_value_watcher_queue only contain each assign once,so when
+    the memory return, only if we recieve the last package, we push to the 
+    waiting_value_watcher_queue*/
     if (!waiting_value_watcher_queue.empty())
     {
-        busy=true;
-        auto total_size = waiting_value_watcher_queue.front().as->get_watcher_size();
+        busy = true;
+        auto total_size = (unsigned)waiting_value_watcher_queue.front().as->get_watcher_size();
         auto &current_size = waiting_value_watcher_queue.front().watcherId;
 
         out_memory_read_queue.push_back(waiting_value_watcher_queue.front());
@@ -35,9 +35,9 @@ void watcher::cycle()
     //from waiting_process_queue to out_send_queue
     if (!waiting_process_queue.empty())
     {
-        auto total_size = waiting_process_queue.front().as->get_watcher_size();
+        auto total_size = (unsigned)waiting_process_queue.front().as->get_watcher_size();
         auto &current_size = waiting_process_queue.front().watcherId;
-        busy=true;
+        busy = true;
 
         if (waiting_process_queue.front().as->is_read_clause(current_size))
         {
@@ -55,9 +55,9 @@ void watcher::cycle()
     //notice: we push 64 bytes request per cycle
     if (!waiting_read_watcher_queue.empty())
     {
-        busy=true;
+        busy = true;
 
-        auto total_size = waiting_read_watcher_queue.front().as->get_watcher_size();
+        auto total_size = (unsigned)waiting_read_watcher_queue.front().as->get_watcher_size();
         auto &current_size = waiting_read_watcher_queue.front().watcherId;
 
         out_memory_read_queue.push_back(waiting_read_watcher_queue.front());
@@ -72,7 +72,7 @@ void watcher::cycle()
     //from in_task to waiting_read_watcher_queue
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
-        busy=true;
+        busy = true;
 
         waiting_read_watcher_queue.push_back(in_task_queue.front());
         waiting_read_watcher_queue.back().watcherId = 0;
@@ -83,7 +83,7 @@ void watcher::cycle()
 
     if (!in_memory_resp_queue.empty())
     {
-        busy=true;
+        busy = true;
 
         auto &type = in_memory_resp_queue.front().type;
         auto &index = in_memory_resp_queue.front().watcherId;
@@ -91,7 +91,7 @@ void watcher::cycle()
         //into waiting_value_watcher_queue
         if (type == ReadType::ReadWatcher and waiting_value_watcher_queue.size() < value_size)
         {
-            if (index + 16 >= as->get_watcher_size()) //the last one
+            if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 waiting_value_watcher_queue.push_back(in_memory_resp_queue.front());
                 waiting_value_watcher_queue.back().watcherId = 0; //reset to zero
@@ -102,7 +102,7 @@ void watcher::cycle()
         //into waiting_process_queue
         else if (type == ReadType::WatcherReadValue and waiting_process_queue.size() < process_size)
         {
-            if (index + 1 >= as->get_watcher_size()) //the last one
+            if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 waiting_process_queue.push_back(in_memory_resp_queue.front());
                 waiting_process_queue.back().watcherId = 0;
@@ -111,4 +111,5 @@ void watcher::cycle()
             in_memory_resp_queue.pop_front();
         }
     }
+    return busy;
 }

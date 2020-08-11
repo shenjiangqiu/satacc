@@ -5,17 +5,17 @@
 
 #include "clause.h"
 
-TEST_CASE("WatcherClause", "WatcherClause")
+TEST_CASE("WatcherClause", "[advanced][core][componet]")
 {
     clause c;
     watcher w;
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
     auto new_wrap2 = af.create(11, 16, 2, new_wrap1, 1);
-
+    new_wrap1->set_addr(3333);
     new_wrap1->add_modified_list(0, 1);
     new_wrap1->add_modified_list(10, 2);
-    new_wrap1->add_modified_list(0, 100);
+    //new_wrap1->add_modified_list(0, 100);
 
     new_wrap1->add_clause_literal(0, 0);
     new_wrap1->add_clause_literal(0, 2);

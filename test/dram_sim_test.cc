@@ -16,7 +16,7 @@ void write_call_back(uint64_t addr)
     std::cout << "recieveed " << addr << std::endl;
     recieved = true;
 }
-TEST_CASE("DramTest")
+TEST_CASE("DramTest","[tool]")
 {
 
     dramsim3::MemorySystem m_mem("DDR4_4Gb_x16_2133_2.ini", "./", std::bind(read_call_back, std::placeholders::_1), std::bind(write_call_back, std::placeholders::_1));

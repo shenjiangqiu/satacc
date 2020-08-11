@@ -8,18 +8,21 @@ clause::~clause()
 {
 }
 
-void clause::cycle()
+bool clause::cycle()
 {
-    busy = false;
-    process_waiting_to_out();
-    value_waiting_to_mem_out();
-    data_waiting_to_mem_out();
-    mem_in_to_comp();
-    task_to_data_waiting();
+
+    bool busy = false;
+    busy |= process_waiting_to_out();
+    busy |= value_waiting_to_mem_out();
+    busy |= data_waiting_to_mem_out();
+    busy |= mem_in_to_comp();
+    busy |= task_to_data_waiting();
+    return busy;
 }
 
-void clause::task_to_data_waiting() //get the task and send to data waiting queue
+bool clause::task_to_data_waiting() //get the task and send to data waiting queue
 {
+    bool busy = false;
     if (!in_task_queue.empty() and clause_data_read_waiting_queue.size() < data_size)
     {
         busy = true;
@@ -29,9 +32,11 @@ void clause::task_to_data_waiting() //get the task and send to data waiting queu
         clause_data_read_waiting_queue.back().clauseId = 0;
         in_task_queue.pop_front();
     }
+    return busy;
 }
-void clause::data_waiting_to_mem_out() // get from data_waiting queue, and get clause detail
+bool clause::data_waiting_to_mem_out() // get from data_waiting queue, and get clause detail
 {
+    bool busy = false;
     if (!clause_data_read_waiting_queue.empty())
     {
         busy = true;
@@ -47,9 +52,11 @@ void clause::data_waiting_to_mem_out() // get from data_waiting queue, and get c
             clause_data_read_waiting_queue.pop_front();
         }
     }
+    return busy;
 }
-void clause::value_waiting_to_mem_out() // get from value_waiting, and get value details
+bool clause::value_waiting_to_mem_out() // get from value_waiting, and get value details
 {
+    bool busy = false;
     if (!clause_value_read_waiting_queue.empty())
     {
         busy = true;
@@ -68,9 +75,11 @@ void clause::value_waiting_to_mem_out() // get from value_waiting, and get value
             clause_value_read_waiting_queue.pop_front();
         }
     }
+    return busy;
 }
-void clause::mem_in_to_comp() //to value_waiting and process waiting
+bool clause::mem_in_to_comp() //to value_waiting and process waiting
 {
+    bool busy = false;
     if (!in_memory_resp_queue.empty())
     {
         auto &req = in_memory_resp_queue.front();
@@ -108,10 +117,12 @@ void clause::mem_in_to_comp() //to value_waiting and process waiting
             in_memory_resp_queue.pop_front();
         }
     }
+    return busy;
 }
 
-void clause::process_waiting_to_out() //process the clause and send out
+bool clause::process_waiting_to_out() //process the clause and send out
 {
+    bool busy = false;
     if (!clause_process_waiting_queue.empty())
     {
         busy = true;
@@ -142,4 +153,5 @@ void clause::process_waiting_to_out() //process the clause and send out
 
         /* code */
     }
+    return busy;
 }

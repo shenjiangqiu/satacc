@@ -5,7 +5,7 @@
 
 #include "clause.h"
 
-TEST_CASE("Clause", "Clause")
+TEST_CASE("Clause", "[basic][core][componet]")
 {
     clause c;
 
