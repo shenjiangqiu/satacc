@@ -111,5 +111,9 @@ bool watcher::cycle()
             in_memory_resp_queue.pop_front();
         }
     }
+    if (busy)
+        this->busy++;
+    else
+        this->idle++;
     return busy;
 }

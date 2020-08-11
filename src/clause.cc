@@ -17,6 +17,10 @@ bool clause::cycle()
     busy |= data_waiting_to_mem_out();
     busy |= mem_in_to_comp();
     busy |= task_to_data_waiting();
+    if (busy)
+        this->busy++;
+    else
+        this->idle++;
     return busy;
 }
 
@@ -128,7 +132,7 @@ bool clause::process_waiting_to_out() //process the clause and send out
         busy = true;
 
         auto &req = clause_process_waiting_queue.front();
-        auto type = req.type;
+        //auto type = req.type;
         auto watcherId = req.watcherId;
         auto &clauseId = req.clauseId;
         auto ass = req.as;

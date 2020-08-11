@@ -65,6 +65,7 @@
         "regex": "cpp",
         "valarray": "cpp",
         "set": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "ciso646": "cpp"
     }
 }

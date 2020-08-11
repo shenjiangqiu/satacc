@@ -11,7 +11,7 @@ TEST_CASE("Clause", "[basic][core][componet]")
 
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
-    auto new_wrap2 = af.create(11, 16, 2, new_wrap1, 1);
+    //auto new_wrap2 = af.create(11, 16, 2, new_wrap1, 1);
 
     new_wrap1->add_modified_list(0, 1);
     new_wrap1->add_modified_list(10, 2);
@@ -19,6 +19,7 @@ TEST_CASE("Clause", "[basic][core][componet]")
     new_wrap1->add_clause_literal(0, 0);
     new_wrap1->add_clause_literal(0, 2);
     new_wrap1->add_clause_literal(0, 3);
+
     new_wrap1->add_detail(0, 11);
     new_wrap1->add_detail(0, 12);
     new_wrap1->add_detail(0, 13);

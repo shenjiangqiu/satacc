@@ -9,6 +9,7 @@
 #include "memory_system.h"
 #include <tuple>
 #include "component.h"
+#include <fmt/core.h>
 enum class ReadType
 {
     ReadWatcher,
@@ -98,7 +99,28 @@ private:
     void read_call_back(uint64_t addr);
     void write_call_back(uint64_t addr);
     /* data */
+    uint64_t busy = 0;
+    uint64_t idle = 0;
+    /* data */
 public:
+    double get_busy_percent()
+    {
+        return double(busy) / double(busy + idle);
+    }
+    std::string get_line_trace()
+    {
+        return std::to_string(get_busy_percent());
+    }
+    std::string get_internal_size()
+    {
+        return fmt::format("{} {} {} {} {} {}",
+                           delay_resp_queue.size(),
+                           addr_to_req.size(),
+                           miss_queue.size(),
+                           dram_resp_queue.size(),
+                           in_request_queue.size(),
+                           out_resp_queue.size());
+    }
     bool empty()
     {
         return delay_resp_queue.empty() and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and

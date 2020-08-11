@@ -4,6 +4,8 @@
 #include <deque>
 #include "assign_wrap.h"
 #include "cache_interface.h"
+#include <string>
+#include <fmt/core.h>
 class clause : public componet
 {
     using pair_int_as = std::pair<int, assign_wrap *>;
@@ -26,8 +28,29 @@ private:
     std::deque<cache_interface_req> clause_data_read_waiting_queue;
     std::deque<cache_interface_req> clause_value_read_waiting_queue;
     std::deque<cache_interface_req> clause_process_waiting_queue;
+    uint64_t idle = 0;
+    uint64_t busy = 0;
 
 public:
+    std::string get_internal_size()
+    {
+        return fmt::format("{} {} {} {} {} {} {}",
+                           clause_data_read_waiting_queue.size(),
+                           clause_value_read_waiting_queue.size(),
+                           clause_process_waiting_queue.size(),
+                           in_memory_resp_queue.size(),
+                           in_task_queue.size(),
+                           out_memory_read_queue.size(),
+                           out_queue.size());
+    }
+    double get_busy_percent()
+    {
+        return double(busy) / double(busy + idle);
+    }
+    std::string get_line_trace()
+    {
+        return std::to_string(get_busy_percent());
+    }
     bool empty()
     {
         return clause_data_read_waiting_queue.empty() and clause_value_read_waiting_queue.empty() and clause_process_waiting_queue.empty() and in_memory_resp_queue.empty() and

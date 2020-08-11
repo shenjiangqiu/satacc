@@ -36,6 +36,11 @@ bool cache_interface::cycle()
     busy |= from_dramresp_to_resp();
     busy |= from_miss_q_to_dram();
     busy |= from_in_to_cache();
+
+    if (busy)
+        this->busy++;
+    else
+        this->idle++;
     return busy;
     //from missq to dram
 
@@ -45,12 +50,16 @@ bool cache_interface::cycle()
 bool cache_interface::from_delayresp_to_out()
 {
     bool busy = false;
-    if (!delay_resp_queue.empty() and current_cycle > delay_resp_queue.front().first + cache_delay)
+    if (!delay_resp_queue.empty())
     {
         busy = true;
-        auto &req = delay_resp_queue.front().second;
-        out_resp_queue.push_back(req);
-        delay_resp_queue.pop_front();
+        if (current_cycle > delay_resp_queue.front().first + cache_delay)
+        {
+            //busy = true;
+            auto &req = delay_resp_queue.front().second;
+            out_resp_queue.push_back(req);
+            delay_resp_queue.pop_front();
+        }
     }
     return busy;
 }
@@ -103,6 +112,7 @@ bool cache_interface::from_in_to_cache()
         auto clauseId = req.clauseId;
         uint64_t addr = 0;
         int cache_type = 0;
+
         switch (type)
         {
         case ReadType::ReadClauseData:
@@ -132,6 +142,7 @@ bool cache_interface::from_in_to_cache()
         addr = addr & ((1ull << 32) - 1); //only cover 4gb memory
         auto cache_result = m_cache.try_access(addr, cache_type);
         auto block_addr = addr & ~((1 << 6) - 1);
+        //auto cache_result = cache::hit;
         if (cache_result == cache::resfail)
         {
             return false;
@@ -143,6 +154,7 @@ bool cache_interface::from_in_to_cache()
         }
 
         cache_result = m_cache.access(addr, cache_type);
+        //cache_result = cache::hit;
         switch (cache_result)
         {
         case cache::hit:

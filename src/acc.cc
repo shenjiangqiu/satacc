@@ -1,5 +1,5 @@
 #include "acc.h"
-acc::acc(unsigned num_watchers, unsigned num_clauses) : num_watchers(num_watchers), num_clauses(num_clauses)
+acc::acc(unsigned t_num_watchers, unsigned t_num_clauses) : num_watchers(t_num_watchers), num_clauses(t_num_clauses)
 {
     // add the componets s
     m_cache_interface = new cache_interface(16, 1 << 16, 196, 4);
@@ -20,7 +20,7 @@ acc::acc(unsigned num_watchers, unsigned num_clauses) : num_watchers(num_watcher
     for (unsigned i = 0; i < num_watchers; i++)
     {
         //the pass for 1, watcher to clause, 2, wathcer and clause to memory. Do not include the internal cycle()
-        clock_passes.push_back([&, this]() -> bool {
+        clock_passes.push_back([i, this]() -> bool {
             bool busy = false;
             static int ii = 0; //current cycle's choice
             int watcher_id = i;
@@ -43,19 +43,23 @@ acc::acc(unsigned num_watchers, unsigned num_clauses) : num_watchers(num_watcher
                 m_cache_interface->in_request_queue.back().ComponentId = watcher_id;
                 watchers[watcher_id]->out_memory_read_queue.pop_front();
             }
-            if (!clauses[clause_id]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
+            //for each claue belong to the watcher
+            for (unsigned c_n = 0; c_n < (num_clauses / num_watchers); c_n++)
             {
-                busy = true;
-                m_cache_interface->in_request_queue.push_back(clauses[clause_id]->out_memory_read_queue.front());
-                m_cache_interface->in_request_queue.back().ComponentId = clause_id + num_watchers;
+                if (!clauses[watcher_id * (num_clauses / num_watchers) + c_n]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
+                {
+                    busy = true;
+                    m_cache_interface->in_request_queue.push_back(clauses[clause_id]->out_memory_read_queue.front());
+                    m_cache_interface->in_request_queue.back().ComponentId = clause_id + num_watchers;
 
-                clauses[clause_id]->out_memory_read_queue.pop_front();
+                    clauses[clause_id]->out_memory_read_queue.pop_front();
+                }
             }
             return busy;
         });
     }
     //add pass to send cache response to clauses and watchers
-    clock_passes.push_back([&, this]() {
+    clock_passes.push_back([this]() {
         bool busy = false;
 
         if (!m_cache_interface->out_resp_queue.empty())
@@ -91,7 +95,7 @@ acc::acc(unsigned num_watchers, unsigned num_clauses) : num_watchers(num_watcher
 
     //add the pass for from trail to watchers
 
-    clock_passes.push_back([&, this]() -> bool {
+    clock_passes.push_back([this]() -> bool {
         bool busy = false;
         static int ii = 0;
         int watcher_id = ii;
@@ -110,7 +114,7 @@ acc::acc(unsigned num_watchers, unsigned num_clauses) : num_watchers(num_watcher
     // add the pass for from clauses to trail
     for (unsigned i = 0; i < num_clauses; i++)
     {
-        clock_passes.push_back([&, this]() {
+        clock_passes.push_back([i, this]() {
             bool busy = false;
             int clause_id = i;
             if (!clauses[clause_id]->out_queue.empty())
@@ -144,7 +148,11 @@ bool acc::cycle()
     //clock all the internal components
     for (auto &c : m_componets)
     {
-        c->cycle();
+        busy |= c->cycle();
     }
+    if (busy)
+        this->busy++;
+    else
+        this->idle++;
     return busy;
 }
