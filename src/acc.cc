@@ -2,7 +2,7 @@
 acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cycle) : componet(tcurrent_cycle), num_watchers(t_num_watchers), num_clauses(t_num_clauses)
 {
     // add the componets s
-    m_cache_interface = new cache_interface(16, 1 << 16, 196, 4);
+    m_cache_interface = new cache_interface(16, 1 << 16, 196, 4, current_cycle);
     m_componets.push_back(m_cache_interface);
     for (unsigned i = 0; i < num_watchers; i++)
     {

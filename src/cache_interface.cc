@@ -2,15 +2,15 @@
 #include "component.h"
 #include <functional>
 
-uint64_t componet::current_cycle = 0;
 cache_interface::cache_interface(int cache_set_assositive,
                                  int cache_num_sets,
                                  int cache_mshr_entries,
-                                 int cache_mshr_maxmerge) : m_cache(cache_set_assositive, cache_num_sets, cache::lru, cache_mshr_entries, cache_mshr_maxmerge, "l3cache"),
-                                                            m_mem(
-                                                                "DDR4_4Gb_x16_2133_2.ini", "./",
-                                                                [this](uint64_t addr) { read_call_back(addr); },
-                                                                [this](uint64_t addr) { write_call_back(addr); })
+                                 int cache_mshr_maxmerge,
+                                 uint64_t &t) : componet(t), m_cache(cache_set_assositive, cache_num_sets, cache::lru, cache_mshr_entries, cache_mshr_maxmerge, "l3cache"),
+                                                m_mem(
+                                                    "DDR4_4Gb_x16_2133_2.ini", "./",
+                                                    [this](uint64_t addr) { read_call_back(addr); },
+                                                    [this](uint64_t addr) { write_call_back(addr); })
 {
     //m_mem("DDR4_4Gb_x16_2133_2.ini", "./", std::bind(read_call_back, std::placeholders::_1), std::bind(write_call_back, std::placeholders::_1));
 }
@@ -27,10 +27,8 @@ bool cache_interface::cycle()
 {
     bool busy = false;
     //current_cycle++;
-    if (current_cycle % 16 == 0)
-    {
-        m_mem.ClockTick();
-    }
+    m_mem.ClockTick();
+
     //from in to resp or missq
     busy |= from_delayresp_to_out();
     busy |= from_dramresp_to_resp();

@@ -131,7 +131,7 @@ public:
     {
         return in_request_queue.size() < in_size;
     }
-    cache_interface(int cache_set_assositive, int cache_num_sets, int cache_mshr_entries, int cache_mshr_maxmerge);
+    cache_interface(int cache_set_assositive, int cache_num_sets, int cache_mshr_entries, int cache_mshr_maxmerge, uint64_t &t);
     ~cache_interface();
 
     //interfaces
