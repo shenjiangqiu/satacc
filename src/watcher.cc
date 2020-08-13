@@ -1,6 +1,6 @@
 #include "watcher.h"
 
-watcher::watcher(/* args */)
+watcher::watcher(uint64_t &t) : componet(t)
 {
 }
 

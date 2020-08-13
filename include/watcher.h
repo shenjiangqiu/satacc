@@ -65,7 +65,7 @@ public:
     std::deque<cache_interface_req> in_memory_resp_queue;
 
     bool cycle() override;
-    watcher(/* args */);
+    watcher(uint64_t &t);
     ~watcher();
 };
 

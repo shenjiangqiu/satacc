@@ -4,7 +4,9 @@
 class componet
 {
 public:
-    static uint64_t current_cycle;
+    componet(uint64_t &tcurrent_cycle) : current_cycle(tcurrent_cycle) {}
+    uint64_t &current_cycle;
+    //static uint64_t current_cycle;
     //bool busy;
     virtual ~componet() {}
     virtual bool cycle() = 0;

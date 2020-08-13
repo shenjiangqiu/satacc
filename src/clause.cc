@@ -1,6 +1,6 @@
 #include "clause.h"
 #include "cache_interface.h"
-clause::clause(/* args */)
+clause::clause(uint64_t &t) : componet(t)
 {
 }
 

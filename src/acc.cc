@@ -1,18 +1,18 @@
 #include "acc.h"
-acc::acc(unsigned t_num_watchers, unsigned t_num_clauses) : num_watchers(t_num_watchers), num_clauses(t_num_clauses)
+acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cycle) : componet(tcurrent_cycle), num_watchers(t_num_watchers), num_clauses(t_num_clauses)
 {
     // add the componets s
     m_cache_interface = new cache_interface(16, 1 << 16, 196, 4);
     m_componets.push_back(m_cache_interface);
     for (unsigned i = 0; i < num_watchers; i++)
     {
-        auto new_watcher = new watcher();
+        auto new_watcher = new watcher(current_cycle);
         watchers.push_back(new_watcher);
         m_componets.push_back(new_watcher);
     }
     for (unsigned i = 0; i < num_clauses; i++)
     {
-        auto new_clause = new clause();
+        auto new_clause = new clause(current_cycle);
         clauses.push_back(new_clause);
         m_componets.push_back(new_clause);
     }

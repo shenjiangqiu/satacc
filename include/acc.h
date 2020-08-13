@@ -95,7 +95,7 @@ public:
     std::deque<cache_interface_req> in_m_trail;
 
     bool cycle() override;
-    acc(unsigned num_watchers, unsigned num_clauses);
+    acc(unsigned num_watchers, unsigned num_clauses, uint64_t &tcurrent_cycle);
     ~acc();
 };
 

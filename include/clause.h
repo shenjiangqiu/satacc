@@ -65,7 +65,7 @@ public:
         return in_memory_resp_queue.size() < in_mem_size;
     }
     bool cycle() override;
-    clause(/* args */);
+    clause(uint64_t& tcurrent_cycle);
     ~clause();
 
     std::deque<cache_interface_req> in_task_queue;
