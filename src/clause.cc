@@ -146,6 +146,7 @@ bool clause::process_waiting_to_out() //process the clause and send out
             if (ass->get_generated(watcherId) != nullptr)
             {
                 new_req.as = ass->get_generated(watcherId);
+                assert(new_req.as != nullptr);
                 new_req.watcherId = 0;
                 new_req.clauseId = 0;
                 new_req.type = ReadType::ReadWatcher;

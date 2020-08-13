@@ -125,10 +125,12 @@ bool cache_interface::from_in_to_cache()
             cache_type = 1;
             break;
         case ReadType::ReadWatcher:
+            assert(as != nullptr);
             addr = as->get_addr();
             addr += 4 * watcherId;
             break;
         case ReadType::WatcherReadValue:
+            assert(as->get_watcher_size() != 0);
             addr = as->get_block_addr(watcherId);
 
             break;

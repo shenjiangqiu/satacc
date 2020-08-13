@@ -16,16 +16,18 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
         clauses.push_back(new_clause);
         m_componets.push_back(new_clause);
     }
-
+    //handle from watchers to clauses, and from watchers to memory
     for (unsigned i = 0; i < num_watchers; i++)
     {
         //the pass for 1, watcher to clause, 2, wathcer and clause to memory. Do not include the internal cycle()
         clock_passes.push_back([i, this]() -> bool {
             bool busy = false;
-            static int ii = 0; //current cycle's choice
+            //static int ii = 0; //current cycle's choice
             int watcher_id = i;
-            int clause_id = watcher_id * (num_clauses / num_watchers) + ii;
-            ii = (ii + 1) % (num_clauses / num_watchers);
+            int total_c_p_w = num_clauses / num_watchers;
+            int clause_id = watcher_id * total_c_p_w + watchers[watcher_id]->next_c(total_c_p_w);
+            //bug here , ii will be shared across all the lambda!!!!!
+            //ii = (ii + 1) % (num_clauses / num_watchers);
             //send the request to clause unit
             if (!watchers.at(watcher_id)->out_send_queue.empty() and clauses.at(clause_id)->recieve_rdy())
             {
@@ -39,25 +41,38 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
             if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
             {
                 busy = true;
+                assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
                 m_cache_interface->in_request_queue.push_back(watchers[watcher_id]->out_memory_read_queue.front());
                 m_cache_interface->in_request_queue.back().ComponentId = watcher_id;
                 watchers[watcher_id]->out_memory_read_queue.pop_front();
             }
             //for each claue belong to the watcher
-            for (unsigned c_n = 0; c_n < (num_clauses / num_watchers); c_n++)
-            {
-                if (!clauses[watcher_id * (num_clauses / num_watchers) + c_n]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
-                {
-                    busy = true;
-                    m_cache_interface->in_request_queue.push_back(clauses[clause_id]->out_memory_read_queue.front());
-                    m_cache_interface->in_request_queue.back().ComponentId = clause_id + num_watchers;
 
-                    clauses[clause_id]->out_memory_read_queue.pop_front();
-                }
-            }
             return busy;
         });
     }
+
+    //send clause mem request
+    for (unsigned i = 0; i < num_clauses; i++)
+    {
+        int clauseId = i;
+
+        clock_passes.push_back(
+            [clauseId, this]() {
+                bool busy = false;
+                if (!clauses[clauseId]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
+                {
+                    busy = true;
+                    assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
+                    m_cache_interface->in_request_queue.push_back(clauses[clauseId]->out_memory_read_queue.front());
+                    m_cache_interface->in_request_queue.back().ComponentId = clauseId + num_watchers;
+
+                    clauses[clauseId]->out_memory_read_queue.pop_front();
+                }
+                return busy;
+            });
+    }
+
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
         bool busy = false;
@@ -103,6 +118,7 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
         if (!in_m_trail.empty() and watchers[watcher_id]->recieve_rdy())
         {
             busy = true;
+            assert(in_m_trail.front().as != nullptr);
             watchers[watcher_id]->in_task_queue.push_back(in_m_trail.front());
             in_m_trail.pop_front();
         }
@@ -120,6 +136,7 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
             if (!clauses[clause_id]->out_queue.empty())
             {
                 busy = true;
+                assert(clauses[clause_id]->out_queue.front().as != nullptr);
                 in_m_trail.push_back(clauses[clause_id]->out_queue.front());
                 clauses[clause_id]->out_queue.pop_front();
             }

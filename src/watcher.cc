@@ -21,6 +21,7 @@ bool watcher::cycle()
     {
         busy = true;
         auto total_size = (unsigned)waiting_value_watcher_queue.front().as->get_watcher_size();
+        assert(total_size != 0);
         auto &current_size = waiting_value_watcher_queue.front().watcherId;
 
         out_memory_read_queue.push_back(waiting_value_watcher_queue.front());
@@ -36,6 +37,7 @@ bool watcher::cycle()
     if (!waiting_process_queue.empty())
     {
         auto total_size = (unsigned)waiting_process_queue.front().as->get_watcher_size();
+        assert(total_size > 0);
         auto &current_size = waiting_process_queue.front().watcherId;
         busy = true;
 
@@ -55,27 +57,31 @@ bool watcher::cycle()
     //notice: we push 64 bytes request per cycle
     if (!waiting_read_watcher_queue.empty())
     {
-        busy = true;
 
         auto total_size = (unsigned)waiting_read_watcher_queue.front().as->get_watcher_size();
         auto &current_size = waiting_read_watcher_queue.front().watcherId;
-
-        out_memory_read_queue.push_back(waiting_read_watcher_queue.front());
-        out_memory_read_queue.back().type = ReadType::ReadWatcher;
-        current_size += 16;
-        if (current_size >= total_size)
+        if (current_size >= total_size) //in case the total size is 0
         {
             waiting_read_watcher_queue.pop_front();
+        }
+        else
+        {
+            busy = true;
+
+            out_memory_read_queue.push_back(waiting_read_watcher_queue.front());
+            out_memory_read_queue.back().type = ReadType::ReadWatcher;
+            current_size += 16;
         }
     }
 
     //from in_task to waiting_read_watcher_queue
+
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
         busy = true;
-
         waiting_read_watcher_queue.push_back(in_task_queue.front());
         waiting_read_watcher_queue.back().watcherId = 0;
+        assert(waiting_read_watcher_queue.back().as != nullptr);
         in_task_queue.pop_front();
     }
 

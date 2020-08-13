@@ -18,12 +18,18 @@ private:
     unsigned in_mem_size = 64;
 
     std::deque<cache_interface_req> waiting_value_watcher_queue; // int : remaining value to be processed
-    std::deque<cache_interface_req> waiting_read_watcher_queue;  //int: remaing watcher to be read
+    std::deque<cache_interface_req> waiting_read_watcher_queue;  // int: remaing watcher to be read
     std::deque<cache_interface_req> waiting_process_queue;       // int : remaining watcher to be processed
     uint64_t busy = 0;
     uint64_t idle = 0;
+
+    int next_clause = 0;
     /* data */
 public:
+    int next_c(int total)
+    {
+        return next_clause = (next_clause + 1) % total;
+    }
     double get_busy_percent()
     {
         return double(busy) / double(busy + idle);
