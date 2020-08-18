@@ -10,7 +10,7 @@
 #include <tuple>
 #include "component.h"
 #include <fmt/core.h>
-#include "fmt_types.h"
+
 enum class ReadType
 {
     ReadWatcher,
