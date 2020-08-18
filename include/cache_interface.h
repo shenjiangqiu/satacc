@@ -10,6 +10,7 @@
 #include <tuple>
 #include "component.h"
 #include <fmt/core.h>
+#include "fmt_types.h"
 enum class ReadType
 {
     ReadWatcher,
@@ -103,17 +104,21 @@ private:
     uint64_t idle = 0;
     /* data */
 public:
-    double get_busy_percent()
+    double get_busy_percent() const
     {
         return double(busy) / double(busy + idle);
     }
-    std::string get_line_trace()
+    std::string get_line_trace() const
     {
-        return std::to_string(get_busy_percent());
+        auto c = *m_cache.get_stats();
+        return fmt::format("{}:{}\n", "cache_interface", get_busy_percent()) +
+               fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail{} \n",
+                           c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail);
     }
-    std::string get_internal_size()
+    std::string get_internal_size() const
     {
-        return fmt::format("{} {} {} {} {} {}",
+        return fmt::format("name delay addr_to_req missq dram_r in_req out_rep\n{} {} {} {} {} {} {}",
+                           "cache_interface:",
                            delay_resp_queue.size(),
                            addr_to_req.size(),
                            miss_queue.size(),
@@ -121,13 +126,13 @@ public:
                            in_request_queue.size(),
                            out_resp_queue.size());
     }
-    bool empty()
+    bool empty() const
     {
         return delay_resp_queue.empty() and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and
                in_request_queue.empty() and out_resp_queue.empty();
     }
     bool cycle() override;
-    bool recieve_rdy()
+    bool recieve_rdy() const
     {
         return in_request_queue.size() < in_size;
     }

@@ -6,4 +6,4 @@ libsatacc.so:$(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $^
 .PHONY:clean
 clean:
-	rm -rf *.o
+	rm -rf *.o *.so

@@ -7,7 +7,9 @@
 
 TEST_CASE("Clause", "[basic][core][componet]")
 {
-    clause c;
+    uint64_t current_cycle;
+
+    clause c(current_cycle);
 
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
@@ -38,42 +40,64 @@ TEST_CASE("Clause", "[basic][core][componet]")
     c.in_task_queue.push_back(req1);
     c.in_task_queue.push_back(req2);
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 0);
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseData, 10, 0, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
 
     c.cycle();
+    current_cycle++;
+
     c.in_memory_resp_queue.push_back(cache_interface_req(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
     c.in_memory_resp_queue.push_back(cache_interface_req(ReadType::ReadClauseData, 10, 0, 0, new_wrap1));
 
-    c.cycle(); //now in waiting value;
-    c.cycle(); //now in out_mem;
+    c.cycle();
+    current_cycle++;
+    //now in waiting value;
+    c.cycle();
+    current_cycle++;
+    //now in out_mem;
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 0, 0, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 0, 1, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 0, 2, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 10, 0, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 10, 1, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();
     c.cycle();
+    current_cycle++;
+
     REQUIRE(c.out_memory_read_queue.size() == 1);
     REQUIRE(c.out_memory_read_queue.front() == cache_interface_req(ReadType::ReadClauseValue, 10, 2, 0, new_wrap1));
     c.out_memory_read_queue.pop_front();

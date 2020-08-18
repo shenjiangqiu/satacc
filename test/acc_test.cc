@@ -4,8 +4,8 @@
 #include "cache_interface.h"
 TEST_CASE("acc", "[advanced][core][componet]")
 {
-
-    auto m_acc = acc(4, 4);
+    uint64_t current_cycle = 0;
+    auto m_acc = acc(4, 4, current_cycle);
     m_acc.current_cycle = 0;
     SECTION("long")
     {

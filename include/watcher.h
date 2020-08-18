@@ -30,17 +30,17 @@ public:
     {
         return next_clause = (next_clause + 1) % total;
     }
-    double get_busy_percent()
+    double get_busy_percent() const
     {
         return double(busy) / double(busy + idle);
     }
-    std::string get_line_trace()
+    std::string get_line_trace() const
     {
-        return std::to_string(get_busy_percent());
+        return fmt::format("{}:{}", "watcher", std::to_string(get_busy_percent()));
     }
-    std::string get_internal_size()
+    std::string get_internal_size() const
     {
-        return fmt::format("{} {} {} {} {} {} {}",
+        return fmt::format("name w_v w_d w_p in_ in_m out_m out_s\n {} {} {} {} {} {} {} {}", "watcher",
                            waiting_value_watcher_queue.size(),
                            waiting_read_watcher_queue.size(),
                            waiting_process_queue.size(),
@@ -49,17 +49,17 @@ public:
                            out_memory_read_queue.size(),
                            out_send_queue.size());
     }
-    bool empty()
+    bool empty() const
     {
         bool e = waiting_value_watcher_queue.empty() and waiting_read_watcher_queue.empty() and waiting_process_queue.empty() and
                  in_task_queue.empty() and in_memory_resp_queue.empty() and out_memory_read_queue.empty() and out_send_queue.empty();
         return e;
     }
-    bool recieve_rdy()
+    bool recieve_rdy() const
     {
         return in_task_queue.size() < in_size;
     }
-    bool recieve_mem_rdy()
+    bool recieve_mem_rdy() const
     {
         return in_memory_resp_queue.size() < in_mem_size;
     }

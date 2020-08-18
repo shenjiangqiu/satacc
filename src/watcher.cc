@@ -71,6 +71,10 @@ bool watcher::cycle()
             out_memory_read_queue.push_back(waiting_read_watcher_queue.front());
             out_memory_read_queue.back().type = ReadType::ReadWatcher;
             current_size += 16;
+            if (current_size >= total_size) //in case the total size is 0
+            {
+                waiting_read_watcher_queue.pop_front();
+            }
         }
     }
 

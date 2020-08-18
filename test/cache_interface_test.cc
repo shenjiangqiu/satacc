@@ -2,7 +2,7 @@
 
 #include "cache_interface.h"
 #include "assign_wrap.h"
-TEST_CASE("cache_interface","[basic][core][componet]")
+TEST_CASE("cache_interface", "[basic][core][componet]")
 {
 
     //init
@@ -34,57 +34,58 @@ TEST_CASE("cache_interface","[basic][core][componet]")
     new_wrap1->add_detail(10, 12);
     new_wrap1->add_detail(10, 13);
     //finish init
+    uint64_t current_cycle;
+    auto m_c = cache_interface(16, 1 << 16, 16, 16, current_cycle);
 
-    auto m_c = cache_interface(16, 1 << 16, 16, 16);
     m_c.current_cycle = 0;
     SECTION("first test")
     {
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
 
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
 
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
 
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
 
         //bank burst test
-        std::cout << " burst current cycle:" << componet::current_cycle << std::endl;
+        std::cout << " burst current cycle:" << current_cycle << std::endl;
 
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
@@ -93,25 +94,25 @@ TEST_CASE("cache_interface","[basic][core][componet]")
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
 
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
     }
 
     SECTION("Second test")
     {
-        componet::current_cycle = 0;
-        std::cout << " burst current cycle:" << componet::current_cycle << std::endl;
+        current_cycle = 0;
+        std::cout << " burst current cycle:" << current_cycle << std::endl;
 
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
         m_c.in_request_queue.push_back(cache_interface_req(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
@@ -120,18 +121,18 @@ TEST_CASE("cache_interface","[basic][core][componet]")
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
         while (m_c.out_resp_queue.empty())
         {
             m_c.cycle();
-            componet::current_cycle++;
+            current_cycle++;
         }
         std::cout << m_c.out_resp_queue.front() << std::endl;
         m_c.out_resp_queue.pop_front();
 
-        std::cout << "current cycle:" << componet::current_cycle << std::endl;
+        std::cout << "current cycle:" << current_cycle << std::endl;
     }
 }

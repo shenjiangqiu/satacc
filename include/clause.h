@@ -32,9 +32,10 @@ private:
     uint64_t busy = 0;
 
 public:
-    std::string get_internal_size()
+    std::string get_internal_size() const
     {
-        return fmt::format("{} {} {} {} {} {} {}",
+        return fmt::format("name clause_d clause_v clause_p in_m in_ out_m out\n {} {} {} {} {} {} {} {}",
+                           "clause",
                            clause_data_read_waiting_queue.size(),
                            clause_value_read_waiting_queue.size(),
                            clause_process_waiting_queue.size(),
@@ -43,29 +44,29 @@ public:
                            out_memory_read_queue.size(),
                            out_queue.size());
     }
-    double get_busy_percent()
+    double get_busy_percent() const
     {
         return double(busy) / double(busy + idle);
     }
-    std::string get_line_trace()
+    std::string get_line_trace() const
     {
-        return std::to_string(get_busy_percent());
+        return std::string("clause:") + std::to_string(get_busy_percent());
     }
-    bool empty()
+    bool empty() const
     {
         return clause_data_read_waiting_queue.empty() and clause_value_read_waiting_queue.empty() and clause_process_waiting_queue.empty() and in_memory_resp_queue.empty() and
                in_task_queue.empty() and out_memory_read_queue.empty() and out_queue.empty();
     }
-    bool recieve_rdy()
+    bool recieve_rdy() const
     {
         return in_task_queue.size() < in_size;
     }
-    bool recieve_mem_rdy()
+    bool recieve_mem_rdy() const
     {
         return in_memory_resp_queue.size() < in_mem_size;
     }
     bool cycle() override;
-    clause(uint64_t& tcurrent_cycle);
+    clause(uint64_t &tcurrent_cycle);
     ~clause();
 
     std::deque<cache_interface_req> in_task_queue;

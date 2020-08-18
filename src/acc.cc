@@ -1,5 +1,9 @@
 #include "acc.h"
-acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cycle) : componet(tcurrent_cycle), num_watchers(t_num_watchers), num_clauses(t_num_clauses)
+acc::acc(unsigned t_num_watchers,
+         unsigned t_num_clauses,
+         uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
+                                     num_watchers(t_num_watchers),
+                                     num_clauses(t_num_clauses)
 {
     // add the componets s
     m_cache_interface = new cache_interface(16, 1 << 16, 196, 4, current_cycle);
@@ -9,6 +13,10 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
         auto new_watcher = new watcher(current_cycle);
         watchers.push_back(new_watcher);
         m_componets.push_back(new_watcher);
+
+        auto m_private_cache = new private_cache(8, 1 << 10, current_cycle);
+        m_componets.push_back(m_private_cache);
+        m_private_caches.push_back(m_private_cache);
     }
     for (unsigned i = 0; i < num_clauses; i++)
     {
@@ -16,6 +24,7 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
         clauses.push_back(new_clause);
         m_componets.push_back(new_clause);
     }
+
     //handle from watchers to clauses, and from watchers to memory
     for (unsigned i = 0; i < num_watchers; i++)
     {
@@ -36,18 +45,49 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
                 watchers[watcher_id]->out_send_queue.pop_front();
             }
 
-            //send the memory request to cache interfase
+            //send the memory request to cache interfase //it's direct to l3 cache
+            if (!watchers[watcher_id]->out_memory_read_queue.empty())
+            {
+                if (watchers[watcher_id]->out_memory_read_queue.front().type == ReadType::ReadWatcher)
+                {
+                    if (m_cache_interface->recieve_rdy())
+                    {
+                        busy = true;
+                        assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
+                        const auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-            if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
+                        assert(req.type == ReadType::ReadWatcher);
+                        m_cache_interface->in_request_queue.push_back(req);
+                        m_cache_interface->in_request_queue.back().ComponentId = watcher_id;
+
+                        watchers[watcher_id]->out_memory_read_queue.pop_front();
+                    }
+                }
+                //send private cache to cache//to private cache!!
+                else
+                {
+                    assert(watchers[watcher_id]->out_memory_read_queue.front().type == ReadType::WatcherReadValue);
+                    if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_private_caches[watcher_id]->recieve_rdy())
+                    {
+                        busy = true;
+                        assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
+                        const auto &req = watchers[watcher_id]->out_memory_read_queue.front();
+
+                        assert(req.type == ReadType::WatcherReadValue);
+                        m_private_caches[watcher_id]->in_request.push_back(req);
+                        m_private_caches[watcher_id]->in_request.back().ComponentId = watcher_id;
+
+                        watchers[watcher_id]->out_memory_read_queue.pop_front();
+                    }
+                }
+            }
+            //send private cache to l3 cache
+            if (!m_private_caches[watcher_id]->out_miss_queue.empty() and m_cache_interface->recieve_rdy())
             {
                 busy = true;
-                assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
-                m_cache_interface->in_request_queue.push_back(watchers[watcher_id]->out_memory_read_queue.front());
-                m_cache_interface->in_request_queue.back().ComponentId = watcher_id;
-                watchers[watcher_id]->out_memory_read_queue.pop_front();
+                m_cache_interface->in_request_queue.push_back(m_private_caches[watcher_id]->out_miss_queue.front());
+                m_private_caches[watcher_id]->out_miss_queue.pop_front();
             }
-            //for each claue belong to the watcher
-
             return busy;
         });
     }
@@ -60,18 +100,40 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
         clock_passes.push_back(
             [clauseId, this]() {
                 bool busy = false;
-                if (!clauses[clauseId]->out_memory_read_queue.empty() and m_cache_interface->recieve_rdy())
+                if (!clauses[clauseId]->out_memory_read_queue.empty())
                 {
-                    busy = true;
-                    assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
-                    m_cache_interface->in_request_queue.push_back(clauses[clauseId]->out_memory_read_queue.front());
-                    m_cache_interface->in_request_queue.back().ComponentId = clauseId + num_watchers;
+                    if (clauses[clauseId]->out_memory_read_queue.front().type == ReadType::ReadClauseData)
+                    {
+                        if (m_cache_interface->recieve_rdy())
+                        {
+                            busy = true;
+                            assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
+                            m_cache_interface->in_request_queue.push_back(clauses[clauseId]->out_memory_read_queue.front());
+                            m_cache_interface->in_request_queue.back().ComponentId = clauseId + num_watchers;
 
-                    clauses[clauseId]->out_memory_read_queue.pop_front();
+                            clauses[clauseId]->out_memory_read_queue.pop_front();
+                        }
+                    }
+                    else
+                    {
+                        //push value request to private cache
+                        assert(clauses[clauseId]->out_memory_read_queue.front().type == ReadType::ReadClauseValue);
+                        auto watcherId = clauseId / (num_clauses / num_watchers);
+                        if (m_private_caches[watcherId]->recieve_rdy())
+                        {
+                            busy = true;
+                            assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
+                            m_private_caches[watcherId]->in_request.push_back(clauses[clauseId]->out_memory_read_queue.front());
+                            m_private_caches[watcherId]->in_request.back().ComponentId = clauseId + num_watchers;
+
+                            clauses[clauseId]->out_memory_read_queue.pop_front();
+                        }
+                    }
                 }
+
                 return busy;
             });
-    }
+    } //end for clause
 
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
@@ -83,12 +145,26 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
             if (component_id >= num_watchers)
             {
                 //the case it's a clause request
-                int clause_id = component_id - num_watchers;
-                if (clauses[clause_id]->recieve_mem_rdy())
-                {
-                    busy = true;
 
-                    clauses[clause_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                int clause_id = component_id - num_watchers;
+
+                if (m_cache_interface->out_resp_queue.front().type == ReadType::ReadClauseData)
+                { //send to cleause
+                    if (clauses[clause_id]->recieve_mem_rdy())
+                    {
+                        busy = true;
+
+                        clauses[clause_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                        m_cache_interface->out_resp_queue.pop_front();
+                    }
+                }
+                else
+                {
+                    //send to private cache
+
+                    assert(m_cache_interface->out_resp_queue.front().type == ReadType::ReadClauseValue);
+                    int watcherId = clause_id / (num_clauses / num_watchers);
+                    m_private_caches[watcherId]->in_resp.push_back(m_cache_interface->out_resp_queue.front());
                     m_cache_interface->out_resp_queue.pop_front();
                 }
             }
@@ -96,17 +172,58 @@ acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &tcurrent_cyc
             {
                 //the case it's a watcher request
                 int watcher_id = component_id;
-                if (watchers[watcher_id]->recieve_mem_rdy())
+                if (m_cache_interface->out_resp_queue.front().type == ReadType::ReadWatcher)
                 {
-                    busy = true;
-                    watchers[watcher_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                    //it's a watcher data request , send to watcher
+                    if (watchers[watcher_id]->recieve_mem_rdy())
+                    {
+                        busy = true;
+                        watchers[watcher_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                        m_cache_interface->out_resp_queue.pop_front();
+                    }
+                }
+                else
+                {
+                    assert(m_cache_interface->out_resp_queue.front().type == ReadType::WatcherReadValue);
+                    //int watcherId = clause_id / (num_clauses / num_watchers);
+                    m_private_caches[watcher_id]->in_resp.push_back(m_cache_interface->out_resp_queue.front());
                     m_cache_interface->out_resp_queue.pop_front();
                 }
             }
         }
         return busy;
     });
-    //
+    //from private cache to watchers and clauses.
+    for (unsigned i = 0; i < num_watchers; i++)
+    {
+        clock_passes.push_back([i, this]() {
+            bool busy = false;
+            unsigned watcherId = i;
+            if (!m_private_caches[watcherId]->out_send_q.empty())
+            {
+                busy = true;
+                auto req = m_private_caches[watcherId]->out_send_q.front();
+                if (req.type == ReadType::ReadClauseValue)
+                {
+                    assert(req.ComponentId >= num_watchers);
+                    auto clauseId = req.ComponentId - num_watchers;
+                    assert(clauseId / (num_clauses / num_watchers) == watcherId);
+
+                    clauses[clauseId]->in_memory_resp_queue.push_back(req);
+                    m_private_caches[watcherId]->out_send_q.pop_front();
+                }
+                else
+                {
+                    assert(req.type == ReadType::WatcherReadValue);
+                    assert(req.ComponentId == watcherId);
+
+                    watchers[watcherId]->in_memory_resp_queue.push_back(req);
+                    m_private_caches[watcherId]->out_send_q.pop_front();
+                }
+            }
+            return busy;
+        });
+    }
 
     //add the pass for from trail to watchers
 

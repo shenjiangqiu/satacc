@@ -14,7 +14,8 @@ include depend.mk
 
 main.out:main_test.o ../src/watcher.o ../src/clause.o watcher_test.o \
 		clause_test.o watcher_clause_test.o dram_sim_test.o ../src/cache_interface.o \
-		cache_interface_test.o ../src/acc.o lambda_test.o and_test.o acc_test.o
+		cache_interface_test.o ../src/acc.o lambda_test.o and_test.o acc_test.o\
+		../src/private_cache.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 depend.mk: $(TESTSRCS) $(CORESRCS)
 	echo Making dependencies

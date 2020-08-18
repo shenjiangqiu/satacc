@@ -7,8 +7,9 @@
 
 TEST_CASE("WatcherClause", "[advanced][core][componet]")
 {
-    clause c;
-    watcher w;
+    uint64_t current_cycle;
+    clause c(current_cycle);
+    watcher w(current_cycle);
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
     auto new_wrap2 = af.create(11, 16, 2, new_wrap1, 1);
@@ -39,6 +40,7 @@ TEST_CASE("WatcherClause", "[advanced][core][componet]")
     {
         w.cycle();
         c.cycle();
+        current_cycle++;
         if (!w.out_memory_read_queue.empty())
         {
             w.in_memory_resp_queue.push_back(w.out_memory_read_queue.front());
