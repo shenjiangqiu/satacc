@@ -1,5 +1,5 @@
-CXXFLAGS=-I../include -g -I/home/sjq/git/DRAMsim3/ext/headers -I/home/sjq/git/DRAMsim3/src  -std=c++17 -Wall -fPIC
-LDFLAGS=-lfmt -L /home/sjq/git/DRAMsim3/ -ldramsim3 -lsjqcache 
+CXXFLAGS=-I../include -g -I$(HOME)/git/DRAMsim3/ext/headers -I$(HOME)/git/DRAMsim3/src -I$(HOME)/usr/include  -std=c++17 -Wall -fPIC
+LDFLAGS=-L$(HOME)/usr/lib -L$(HOME)/usr/lib64  -lfmt -L $(HOME)/git/DRAMsim3/ -ldramsim3 -lsjqcache 
 CXX=g++
 CC=gcc
 
