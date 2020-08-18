@@ -9,7 +9,7 @@
 #include "memory_system.h"
 #include <tuple>
 #include "component.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 enum class ReadType
 {

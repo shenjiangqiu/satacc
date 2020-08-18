@@ -5,7 +5,7 @@
 #include "assign_wrap.h"
 #include <tuple>
 #include "cache_interface.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 class watcher : public componet
 {
     using pair_int_as = std::pair<int, assign_wrap *>;
