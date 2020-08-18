@@ -78,7 +78,7 @@ OSTYPE &operator<<(OSTYPE &os, const cache_interface_req &req)
 class cache_interface : public componet
 {
 private:
-    unsigned cache_delay = 6;
+    unsigned cache_delay = 2;
     unsigned delay_q_size = 64;
     unsigned miss_size = 64;
     unsigned in_size = 64;
