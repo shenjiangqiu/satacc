@@ -26,7 +26,7 @@ public:
     {
         auto c = *m_cache.get_stats();
         return fmt::format("{}:{} \n", "private_cache", get_busy_percent()) +
-               fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail{} \n",
+               fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail {} \n",
                            c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail);
     }
 
@@ -48,7 +48,7 @@ public:
     {
         return in_request.size() < in_size;
     }
-    bool empty() const
+    bool empty() const override
     {
         return in_request.empty() and
                out_send_q.empty() and

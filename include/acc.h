@@ -58,11 +58,9 @@ public:
         }
         return r;
     }
-    bool empty() const
+    bool empty() const override
     {
-        return in_m_trail.empty() and m_cache_interface->empty() and
-               std::all_of(watchers.begin(), watchers.end(), [](auto w) { return w->empty(); }) and
-               std::all_of(clauses.begin(), clauses.end(), [](auto c) { return c->empty(); });
+        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto c) { return c->empty(); });
     }
     std::deque<cache_interface_req> in_m_trail;
 

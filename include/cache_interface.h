@@ -112,7 +112,7 @@ public:
     {
         auto c = *m_cache.get_stats();
         return fmt::format("{}:{}\n", "cache_interface", get_busy_percent()) +
-               fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail{} \n",
+               fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail {} \n",
                            c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail);
     }
     std::string get_internal_size() const
@@ -126,7 +126,7 @@ public:
                            in_request_queue.size(),
                            out_resp_queue.size());
     }
-    bool empty() const
+    bool empty() const override
     {
         return delay_resp_queue.empty() and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and
                in_request_queue.empty() and out_resp_queue.empty();

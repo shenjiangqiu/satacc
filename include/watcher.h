@@ -49,7 +49,7 @@ public:
                            out_memory_read_queue.size(),
                            out_send_queue.size());
     }
-    bool empty() const
+    bool empty() const override
     {
         bool e = waiting_value_watcher_queue.empty() and waiting_read_watcher_queue.empty() and waiting_process_queue.empty() and
                  in_task_queue.empty() and in_memory_resp_queue.empty() and out_memory_read_queue.empty() and out_send_queue.empty();

@@ -52,7 +52,7 @@ public:
     {
         return std::string("clause:") + std::to_string(get_busy_percent());
     }
-    bool empty() const
+    bool empty() const override
     {
         return clause_data_read_waiting_queue.empty() and clause_value_read_waiting_queue.empty() and clause_process_waiting_queue.empty() and in_memory_resp_queue.empty() and
                in_task_queue.empty() and out_memory_read_queue.empty() and out_queue.empty();

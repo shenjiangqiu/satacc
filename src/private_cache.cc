@@ -120,6 +120,7 @@ bool private_cache::from_resp_to_send()
         auto &v = addr_to_req[block_addr];
         for (auto &i : v)
         {
+            //std::cout << "out send q push:" << i << std::endl;
             out_send_q.push_back(i);
         }
 

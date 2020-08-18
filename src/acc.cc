@@ -216,7 +216,7 @@ acc::acc(unsigned t_num_watchers,
                 {
                     assert(req.type == ReadType::WatcherReadValue);
                     assert(req.ComponentId == watcherId);
-
+                    //std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
                     watchers[watcherId]->in_memory_resp_queue.push_back(req);
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 }

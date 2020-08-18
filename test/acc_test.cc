@@ -37,4 +37,22 @@ TEST_CASE("acc", "[advanced][core][componet]")
 
         std::cout << m_acc.get_line_trace() << std::endl;
     }
+    SECTION("parallel")
+    {
+        auto as = generate_wrap_para();
+        auto req1 = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as.first);
+        auto req2 = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as.second);
+
+        m_acc.in_m_trail.push_back(req1);
+        m_acc.in_m_trail.push_back(req2);
+        while (!m_acc.empty())
+        {
+            //std::cout << m_acc.get_internal_size() << std::endl;
+            m_acc.cycle();
+            m_acc.current_cycle++;
+        }
+        std::cout << "m_acc current cycle " << m_acc.current_cycle << std::endl;
+
+        std::cout << m_acc.get_line_trace() << std::endl;
+    }
 }
