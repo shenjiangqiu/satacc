@@ -66,6 +66,8 @@
         "valarray": "cpp",
         "set": "cpp",
         "variant": "cpp",
-        "ciso646": "cpp"
+        "ciso646": "cpp",
+        "list": "cpp",
+        "stop_token": "cpp"
     }
 }

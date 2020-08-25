@@ -53,6 +53,7 @@ bool clause::data_waiting_to_mem_out() // get from data_waiting queue, and get c
         clauseId += 16;
         if (clauseId >= total_clause_size)
         {
+            std::cout << "total_size=" << total_clause_size << std::endl;
             clause_data_read_waiting_queue.pop_front();
         }
     }
@@ -139,6 +140,7 @@ bool clause::process_waiting_to_out() //process the clause and send out
         auto total_clause_size = ass->get_clause_literal(watcherId).size();
 
         clauseId += 1;
+
         if (clauseId >= total_clause_size) //the last one
         {
             auto new_req = req;
@@ -152,6 +154,13 @@ bool clause::process_waiting_to_out() //process the clause and send out
                 new_req.type = ReadType::ReadWatcher;
                 out_queue.push_back(new_req);
             }
+            //push
+            //process the write clause traffic
+            busy = true;
+            req.clauseId--;
+            out_clause_write_queue.push_back(req);
+            assert(out_clause_write_queue.back().clauseId + 1 == out_clause_write_queue.back().as->get_clause_detail(watcherId).size());
+            req.clauseId++;
             clause_process_waiting_queue.pop_front();
         }
         //else just continue, we are processing...;

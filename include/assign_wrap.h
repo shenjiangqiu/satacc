@@ -23,6 +23,10 @@ public:
     void set_watcher_size(int size) { watcher_size = size; }
     int get_watcher_size() const { return watcher_size; }
     auto get_pushed(int index) const { return pushed_other_list_items.at(index); }
+    auto get_is_push_to_other(int index) const
+    {
+        return pushed_other_list_items.find(index) != pushed_other_list_items.end();
+    }
     auto get_modified_by_range(int start, int end) const
     {
         auto start_iter = modified_clause_list_items.lower_bound(start);

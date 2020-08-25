@@ -15,6 +15,8 @@
 #include <string>
 #include <fmt/format.h>
 #include "private_cache.h"
+#include "watcher_list_write_unit.h"
+#include "clause_writer.h"
 class acc : public componet
 {
 private:
@@ -28,8 +30,6 @@ private:
     std::vector<private_cache *> m_private_caches;
     cache_interface *m_cache_interface;
 
-    uint64_t busy = 0;
-    uint64_t idle = 0;
 
 public:
     std::string get_internal_size() const override
@@ -43,10 +43,6 @@ public:
         return r;
     }
 
-    double get_busy_percent() const override
-    {
-        return double(busy) / double(busy + idle);
-    }
     std::string get_line_trace() const override
     {
         std::string r("start line trace..\nacc\n");
@@ -66,6 +62,7 @@ public:
 
     bool cycle() override;
     acc(unsigned num_watchers, unsigned num_clauses, uint64_t &tcurrent_cycle);
+    acc(unsigned, unsigned, unsigned, unsigned, uint64_t &);
     ~acc();
 };
 

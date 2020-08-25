@@ -4,3 +4,6 @@
 *.so
 test/dramsim3.json
 test/dramsim3.txt
+test/dramsim3epoch.json
+src/depend.mk
+test/depend.mk

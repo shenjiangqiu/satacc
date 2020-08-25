@@ -10,13 +10,16 @@
 #include <tuple>
 #include "component.h"
 #include <fmt/format.h>
-
+#include <fmt/ranges.h>
 enum class ReadType
 {
     ReadWatcher,
     WatcherReadValue,
     ReadClauseData,
-    ReadClauseValue
+    ReadClauseValue,
+    writeWatcherList,
+    writeClause,
+    max
 };
 
 template <typename OSTYPE>
@@ -36,7 +39,14 @@ OSTYPE &operator<<(OSTYPE &os, const ReadType &req)
     case ReadType::ReadClauseValue:
         os << "ReadClauseValue";
         break;
+    case ReadType::writeWatcherList:
+        os << "writeWatcherList";
+        break;
+    case ReadType::writeClause:
+        os << "writeClause";
+        break;
     default:
+        throw;
         break;
     }
     return os;
@@ -99,23 +109,18 @@ private:
 
     void read_call_back(uint64_t addr);
     void write_call_back(uint64_t addr);
-    /* data */
-    uint64_t busy = 0;
-    uint64_t idle = 0;
+    std::array<uint64_t, (int)ReadType::max> access_hist = {0};
     /* data */
 public:
-    double get_busy_percent() const
-    {
-        return double(busy) / double(busy + idle);
-    }
-    std::string get_line_trace() const
+    std::string get_line_trace() const override
     {
         auto c = *m_cache.get_stats();
         return fmt::format("{}:{}\n", "cache_interface", get_busy_percent()) +
                fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail {} \n",
-                           c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail);
+                           c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail) +
+               fmt::format("the_hist {}", access_hist);
     }
-    std::string get_internal_size() const
+    std::string get_internal_size() const override
     {
         return fmt::format("name delay addr_to_req missq dram_r in_req out_rep\n{} {} {} {} {} {} {}",
                            "cache_interface:",
@@ -137,6 +142,7 @@ public:
         return in_request_queue.size() < in_size;
     }
     cache_interface(int cache_set_assositive, int cache_num_sets, int cache_mshr_entries, int cache_mshr_maxmerge, uint64_t &t);
+    cache_interface(unsigned total_size, uint64_t &t);
     ~cache_interface();
 
     //interfaces

@@ -5,13 +5,12 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/sjq/git/DRAMsim3/src",
-                "/home/sjq/git/DRAMsim3/ext/headers",
-                "/usr/include/c++/8"
+                "/home/sjq/git/DRAMsim3/ext/headers"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
-            "cppStandard": "c++14",
+            "cppStandard": "c++20",
             "intelliSenseMode": "clang-x64"
         }
     ],

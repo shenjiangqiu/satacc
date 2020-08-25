@@ -1,20 +1,29 @@
 #include "acc.h"
+
+acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &t_current_cycle) : acc(t_num_watchers, t_num_clauses, 1 << 10, 16 << 20, t_current_cycle) {}
 acc::acc(unsigned t_num_watchers,
          unsigned t_num_clauses,
+         unsigned private_cache_size,
+         unsigned l3_cache_size,
          uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
                                      num_watchers(t_num_watchers),
                                      num_clauses(t_num_clauses)
 {
     // add the componets s
-    m_cache_interface = new cache_interface(16, 1 << 16, 196, 4, current_cycle);
+    m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
     m_componets.push_back(m_cache_interface);
+    auto m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
+    auto m_clause_write_unit = new clause_writer(current_cycle);
+    m_componets.push_back(m_watcher_write_unit);
+    m_componets.push_back(m_clause_write_unit);
+
     for (unsigned i = 0; i < num_watchers; i++)
     {
         auto new_watcher = new watcher(current_cycle);
         watchers.push_back(new_watcher);
         m_componets.push_back(new_watcher);
 
-        auto m_private_cache = new private_cache(8, 1 << 10, current_cycle);
+        auto m_private_cache = new private_cache(8, private_cache_size, current_cycle);
         m_componets.push_back(m_private_cache);
         m_private_caches.push_back(m_private_cache);
     }
@@ -260,6 +269,64 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
+
+    for (unsigned i = 0; i < num_watchers; i++)
+    {
+        clock_passes.push_back([i, this, m_watcher_write_unit]() {
+            bool busy = false;
+            if (!watchers[i]->out_write_watcher_list_queue.empty())
+            {
+                busy = true;
+                auto req = watchers[i]->out_write_watcher_list_queue.front();
+                m_watcher_write_unit->in_request.push_back(req);
+                watchers[i]->out_write_watcher_list_queue.pop_front();
+            }
+
+            return busy;
+        });
+    }
+
+    for (unsigned i = 0; i < num_clauses; i++)
+    {
+        clock_passes.push_back([i, this, m_clause_write_unit]() {
+            bool busy = false;
+            if (!clauses[i]->out_clause_write_queue.empty())
+            {
+                busy = true;
+                auto req = clauses[i]->out_clause_write_queue.front();
+                m_clause_write_unit->in.push_back(req);
+                clauses[i]->out_clause_write_queue.pop_front();
+            }
+
+            return busy;
+        });
+    }
+
+    //TODO from writer to cache
+    clock_passes.push_back(
+        [this, m_clause_write_unit]() {
+            bool busy = false;
+            if (!m_clause_write_unit->out.empty() and m_cache_interface->recieve_rdy())
+            {
+                busy = true;
+                auto req = m_clause_write_unit->out.front();
+                m_cache_interface->in_request_queue.push_back(req);
+                m_clause_write_unit->out.pop_front();
+            }
+            return busy;
+        });
+
+    clock_passes.push_back([=, this]() {
+        bool busy = false;
+        if (!m_watcher_write_unit->out_mem_requst.empty() and m_cache_interface->recieve_rdy())
+        {
+            auto req = m_watcher_write_unit->out_mem_requst.front();
+            m_watcher_write_unit->out_mem_requst.pop_front();
+            m_cache_interface->in_request_queue.push_back(req);
+            busy = true;
+        }
+        return busy;
+    });
 }
 
 acc::~acc()

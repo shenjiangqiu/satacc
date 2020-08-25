@@ -14,8 +14,6 @@ class private_cache : public componet
 private:
     unsigned in_size = 64;
     unsigned out_size = 64;
-    uint64_t busy = 0;
-    uint64_t idle = 0;
     cache m_cache;
     std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;
     bool from_in_to_out();
@@ -30,10 +28,6 @@ public:
                            c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail);
     }
 
-    double get_busy_percent() const override
-    {
-        return ((double)busy) / (double)(busy + idle);
-    }
     std::string get_internal_size() const override
     {
         return fmt::format("name in out out_miss in_resp addr_to_req \n{} {} {} {} {} ", "private_cache",

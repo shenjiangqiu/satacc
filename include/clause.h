@@ -28,13 +28,11 @@ private:
     std::deque<cache_interface_req> clause_data_read_waiting_queue;
     std::deque<cache_interface_req> clause_value_read_waiting_queue;
     std::deque<cache_interface_req> clause_process_waiting_queue;
-    uint64_t idle = 0;
-    uint64_t busy = 0;
 
 public:
-    std::string get_internal_size() const
+    std::string get_internal_size() const override
     {
-        return fmt::format("name clause_d clause_v clause_p in_m in_ out_m out\n {} {} {} {} {} {} {} {}",
+        return fmt::format("name clause_d clause_v clause_p in_m in_ out_m out\n {} {} {} {} {} {} {} {} {}",
                            "clause",
                            clause_data_read_waiting_queue.size(),
                            clause_value_read_waiting_queue.size(),
@@ -42,13 +40,11 @@ public:
                            in_memory_resp_queue.size(),
                            in_task_queue.size(),
                            out_memory_read_queue.size(),
-                           out_queue.size());
+                           out_queue.size(),
+                           out_clause_write_queue.size());
     }
-    double get_busy_percent() const
-    {
-        return double(busy) / double(busy + idle);
-    }
-    std::string get_line_trace() const
+
+    std::string get_line_trace() const override
     {
         return std::string("clause:") + std::to_string(get_busy_percent());
     }
@@ -65,6 +61,7 @@ public:
     {
         return in_memory_resp_queue.size() < in_mem_size;
     }
+
     bool cycle() override;
     clause(uint64_t &tcurrent_cycle);
     ~clause();
@@ -74,6 +71,9 @@ public:
 
     std::deque<cache_interface_req> out_memory_read_queue; //int:flag
     std::deque<cache_interface_req> in_memory_resp_queue;
+
+    //std::deque<cache_interface_req> out_watcher_list_write_queue;
+    std::deque<cache_interface_req> out_clause_write_queue;
 };
 
 #endif

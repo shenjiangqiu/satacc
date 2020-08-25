@@ -43,6 +43,10 @@ auto generate_wrap()
 
     new_wrap2->set_addr(4444);
     new_wrap2->add_modified_list(0, 200);
+
+    new_wrap2->add_clause_literal(0, 0);
+    new_wrap2->add_clause_literal(0, 1);
+    new_wrap2->add_clause_literal(0, 2);
     new_wrap2->add_detail(0, 22);
     new_wrap2->add_detail(0, 23);
     new_wrap2->add_detail(0, 24);
@@ -92,6 +96,9 @@ auto generate_wrap_short()
 
     new_wrap2->set_addr(4444);
     new_wrap2->add_modified_list(0, 200);
+    new_wrap2->add_clause_literal(0, 0);
+    new_wrap2->add_clause_literal(0, 1);
+    new_wrap2->add_clause_literal(0, 2);
     new_wrap2->add_detail(0, 22);
     new_wrap2->add_detail(0, 23);
     new_wrap2->add_detail(0, 24);
@@ -104,6 +111,16 @@ auto generate_wrap_para()
 {
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
+    new_wrap1->add_pushed_list(0, 10);
+    new_wrap1->add_pushed_list(1, 20);
+    new_wrap1->add_pushed_list(2, 10);
+    new_wrap1->add_pushed_list(3, 10);
+    new_wrap1->add_pushed_list(4, 10);
+    new_wrap1->add_pushed_list(5, 10);
+    new_wrap1->add_pushed_list(6, 10);
+    new_wrap1->add_pushed_list(7, 10);
+    new_wrap1->add_pushed_list(8, 10);
+    new_wrap1->add_pushed_list(9, 10);
 
     for (int i = 0; i < 32; i++)
     {
@@ -151,6 +168,10 @@ auto generate_wrap_para()
 
     new_wrap2->set_addr(4444);
     new_wrap2->add_modified_list(0, 200);
+
+    new_wrap2->add_clause_literal(0, 0);
+    new_wrap2->add_clause_literal(0, 1);
+    new_wrap2->add_clause_literal(0, 2);
     new_wrap2->add_detail(0, 22);
     new_wrap2->add_detail(0, 23);
     new_wrap2->add_detail(0, 24);

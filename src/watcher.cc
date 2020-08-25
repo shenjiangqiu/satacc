@@ -11,12 +11,22 @@ watcher::~watcher()
 bool watcher::cycle()
 {
     bool busy = false;
+    busy |= from_value_to_out_mem();
+    busy |= from_process_to_out();
+    busy |= from_read_watcher_to_mem();
+    busy |= from_in_to_read();
+    busy |= from_resp_to_insider();
 
-    //from waiting_value_watcher_queue to out_memory_read_queue,
-    //notice: each time only read one value, because they are not continued
-    /*notice: waiting_value_watcher_queue only contain each assign once,so when
-    the memory return, only if we recieve the last package, we push to the 
-    waiting_value_watcher_queue*/
+    if (busy)
+        this->busy++;
+    else
+        this->idle++;
+    return busy;
+}
+
+bool watcher::from_value_to_out_mem()
+{
+    bool busy = false;
     if (!waiting_value_watcher_queue.empty())
     {
         busy = true;
@@ -33,13 +43,34 @@ bool watcher::cycle()
             waiting_value_watcher_queue.pop_front();
         }
     }
-    //from waiting_process_queue to out_send_queue
+    return busy;
+}
+/**
+ * change log:
+ * add write traffic for writing watcher list
+ */
+bool watcher::from_process_to_out()
+{
+    bool busy = false;
+
     if (!waiting_process_queue.empty())
     {
         auto total_size = (unsigned)waiting_process_queue.front().as->get_watcher_size();
         assert(total_size > 0);
+        auto &req = waiting_process_queue.front();
         auto &current_size = waiting_process_queue.front().watcherId;
         busy = true;
+
+        if (current_size == 0)
+        {
+            //the first one, generate the new request
+            out_write_watcher_list_queue.push_back(req);
+        }
+        else if (current_size == total_size - 1)
+        {
+            out_write_watcher_list_queue.push_back(req);
+            //the last one, generate the clean task
+        }
 
         if (waiting_process_queue.front().as->is_read_clause(current_size))
         {
@@ -52,9 +83,12 @@ bool watcher::cycle()
             waiting_process_queue.pop_front();
         }
     }
+    return busy;
+}
+bool watcher::from_read_watcher_to_mem()
+{
+    bool busy = false;
 
-    //from waiting_read_watcher_queue to out_memory_read_queue
-    //notice: we push 64 bytes request per cycle
     if (!waiting_read_watcher_queue.empty())
     {
 
@@ -77,8 +111,11 @@ bool watcher::cycle()
             }
         }
     }
-
-    //from in_task to waiting_read_watcher_queue
+    return busy;
+}
+bool watcher::from_in_to_read()
+{
+    bool busy = false;
 
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
@@ -88,8 +125,11 @@ bool watcher::cycle()
         assert(waiting_read_watcher_queue.back().as != nullptr);
         in_task_queue.pop_front();
     }
-
-    //from in_memory_resp_queuue to inside queue
+    return busy;
+}
+bool watcher::from_resp_to_insider()
+{
+    bool busy = false;
 
     if (!in_memory_resp_queue.empty())
     {
@@ -121,9 +161,5 @@ bool watcher::cycle()
             in_memory_resp_queue.pop_front();
         }
     }
-    if (busy)
-        this->busy++;
-    else
-        this->idle++;
     return busy;
 }

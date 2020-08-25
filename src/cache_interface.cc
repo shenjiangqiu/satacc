@@ -1,7 +1,9 @@
 #include "cache_interface.h"
 #include "component.h"
 #include <functional>
-
+cache_interface::cache_interface(unsigned int total_size, uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, t)
+{
+}
 cache_interface::cache_interface(int cache_set_assositive,
                                  int cache_num_sets,
                                  int cache_mshr_entries,
@@ -110,6 +112,7 @@ bool cache_interface::from_in_to_cache()
         auto clauseId = req.clauseId;
         uint64_t addr = 0;
         int cache_type = 0;
+        access_hist[(int)type]++;
 
         switch (type)
         {
@@ -119,6 +122,7 @@ bool cache_interface::from_in_to_cache()
             addr = as->get_clause_addr(watcherId);
             addr += clauseId * 4;
             cache_type = 1;
+
             break;
         case ReadType::ReadClauseValue:
             addr = as->get_clause_detail(watcherId)[clauseId];
@@ -134,8 +138,15 @@ bool cache_interface::from_in_to_cache()
             addr = as->get_block_addr(watcherId);
 
             break;
+        case ReadType::writeClause:
+        case ReadType::writeWatcherList:
+            in_request_queue.pop_front();
 
+            //just drop it, and return immediately
+            return true;
+            break;
         default:
+            throw;
             break;
         }
 
