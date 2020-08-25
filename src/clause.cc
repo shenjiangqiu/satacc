@@ -53,7 +53,6 @@ bool clause::data_waiting_to_mem_out() // get from data_waiting queue, and get c
         clauseId += 16;
         if (clauseId >= total_clause_size)
         {
-            std::cout << "total_size=" << total_clause_size << std::endl;
             clause_data_read_waiting_queue.pop_front();
         }
     }

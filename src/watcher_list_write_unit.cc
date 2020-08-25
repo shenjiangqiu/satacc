@@ -9,7 +9,6 @@ watcher_list_write_unit::~watcher_list_write_unit()
  *              1.2 when the buffer entry is full, generate the write request to l3
  *          2, when recieve the last watcher, delete them from current map if exist
  * 
- * TODO need to get statistics for the size of merge!
  */
 bool watcher_list_write_unit::cycle()
 {
@@ -80,6 +79,12 @@ bool watcher_list_write_unit::cycle()
                         current_map.erase(current_assign);
                         out_mem_requst.push_back(req);
                         evict_current_size_histo[7]++;
+                    }
+                    if (watcehrSize == 1)
+                    {
+                        //the first one is also the last one
+                        out_mem_requst.push_back(req);
+                        current_map.erase(current_assign);
                     }
                 }
             }
