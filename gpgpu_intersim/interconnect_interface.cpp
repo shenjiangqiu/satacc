@@ -38,13 +38,12 @@
 #include "globals.hpp"
 #include "trafficmanager.hpp"
 #include "power_module.hpp"
-#include "mem_fetch.h"
+
 #include "flit.hpp"
 #include "gputrafficmanager.hpp"
 #include "booksim.hpp"
 #include "intersim_config.hpp"
 #include "network.hpp"
-#include "trace.h"
 
 InterconnectInterface* InterconnectInterface::New(const char* const config_file)
 {
@@ -149,7 +148,7 @@ void InterconnectInterface::Push(unsigned input_deviceID, unsigned output_device
   // it should have free buffer
   assert(HasBuffer(input_deviceID, size));
 
-  DPRINTF(INTERCONNECT, "Sent %d bytes from %d to %d", size, input_deviceID, output_deviceID);
+  //DPRINTF(INTERCONNECT, "Sent %d bytes from %d to %d", size, input_deviceID, output_deviceID);
   
   int output_icntID = _node_map[output_deviceID];
   int input_icntID = _node_map[input_deviceID];
@@ -174,19 +173,7 @@ void InterconnectInterface::Push(unsigned input_deviceID, unsigned output_device
 
   //TODO: Remove mem_fetch to reduce dependency
   Flit::FlitType packet_type;
-  mem_fetch* mf = static_cast<mem_fetch*>(data);
-
-  switch (mf->get_type()) {
-    case READ_REQUEST:  packet_type = Flit::READ_REQUEST   ;break;
-    case WRITE_REQUEST: packet_type = Flit::WRITE_REQUEST  ;break;
-    case READ_REPLY:    packet_type = Flit::READ_REPLY     ;break;
-    case WRITE_ACK:     packet_type = Flit::WRITE_REPLY    ;break;
-    default:
-    	{
-    		cout<<"Type "<<mf->get_type()<<" is undefined!"<<endl;
-    		assert (0 && "Type is undefined");
-    	}
-  }
+  packet_type=Flit::READ_REQUEST;
 
   //TODO: _include_queuing ?
   _traffic_manager->_GeneratePacket( input_icntID, -1, 0 /*class*/, _traffic_manager->_time, subnet, n_flits, packet_type, data, output_icntID);

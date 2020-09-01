@@ -173,7 +173,7 @@ bool Simulate( BookSimConfig const & config )
 #ifdef CREATE_LIBRARY
 
 #else
-int main( int argc, char **argv )
+int main_booksim( int argc, char **argv )
 {
 
   BookSimConfig config;
