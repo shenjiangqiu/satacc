@@ -32,6 +32,10 @@
 #include "interconnect_interface.hpp"
 #include "local_interconnect.h"
 #include "utils/Options.h"
+#include <trafficmanager.hpp>
+
+InterconnectInterface *g_icnt_interface;
+TrafficManager * trafficManager = NULL;
 
 icnt_create_p icnt_create;
 icnt_init_p icnt_init;
@@ -160,43 +164,7 @@ IntOption icnt_arbiter_algo(gpgpu_icnt, "icnt_arbiter_algo", "", 000);
 IntOption icnt_verbose(gpgpu_icnt, "icnt_verbose", "", 000);
 IntOption icnt_grant_cycles(gpgpu_icnt, "icnt_grant_cycles", "", 000);
 
-void icnt_reg_options()
-{
-  g_network_mode = network_mode;
-  g_network_config_filename = (const char *)inter_config_file;
-  g_inct_config.in_buffer_limit = icnt_in_buffer_limit;
-  g_inct_config.out_buffer_limit = icnt_out_buffer_limit;
-  g_inct_config.subnets = icnt_subnets;
-  g_inct_config.arbiter_algo = (Arbiteration_type)(uint32_t)icnt_arbiter_algo;
-  g_inct_config.verbose = icnt_verbose;
-  g_inct_config.grant_cycles = icnt_grant_cycles;
 
-  std::cout << "finished parse the file.g_network_config_filename=" << g_network_config_filename << std::endl;
-  int a;
-  std::cin >> a;
-
-  /* option_parser_register(opp, "-network_mode", OPT_INT32, &g_network_mode,
-                         "Interconnection network mode", "1");
-  option_parser_register(opp, "-inter_config_file", OPT_CSTR,
-                         &g_network_config_filename,
-                         "Interconnection network config file", "mesh");
-
-  // parameters for local xbar
-  option_parser_register(opp, "-icnt_in_buffer_limit", OPT_UINT32,
-                         &g_inct_config.in_buffer_limit, "in_buffer_limit",
-                         "64");
-  option_parser_register(opp, "-icnt_out_buffer_limit", OPT_UINT32,
-                         &g_inct_config.out_buffer_limit, "out_buffer_limit",
-                         "64");
-  option_parser_register(opp, "-icnt_subnets", OPT_UINT32,
-                         &g_inct_config.subnets, "subnets", "2");
-  option_parser_register(opp, "-icnt_arbiter_algo", OPT_UINT32,
-                         &g_inct_config.arbiter_algo, "arbiter_algo", "1");
-  option_parser_register(opp, "-icnt_verbose", OPT_UINT32,
-                         &g_inct_config.verbose, "inct_verbose", "0");
-  option_parser_register(opp, "-icnt_grant_cycles", OPT_UINT32,
-                         &g_inct_config.grant_cycles, "grant_cycles", "1"); */
-}
 
 void icnt_wrapper_init()
 {

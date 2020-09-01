@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(intersim2)
 
-file(GLOB SOURCES *.cpp  allocators/*.cpp arbiters/*.cpp networks/*.cpp power/*.cpp routers/*.cpp)
+file(GLOB SOURCES *.cpp *.cc  allocators/*.cpp arbiters/*.cpp networks/*.cpp power/*.cpp routers/*.cpp)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)

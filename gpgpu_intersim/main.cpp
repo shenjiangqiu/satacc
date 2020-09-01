@@ -54,6 +54,7 @@
 #include "injection.hpp"
 #include "power_module.hpp"
 #include "interconnect_interface.hpp"
+#include <icnt_wrapper.h>
 
 
 
@@ -62,10 +63,8 @@
 //////////////////////
 
 // Interconnect Interface instance
-InterconnectInterface *g_icnt_interface;
 
 /* the current traffic manager instance */
-TrafficManager * trafficManager = NULL;
 #if 0
 
 int GetSimTime() {
