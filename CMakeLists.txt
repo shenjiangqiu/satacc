@@ -4,6 +4,8 @@ add_subdirectory(gpgpu_intersim)
 add_subdirectory(sjqcache)
 add_subdirectory(fmt)
 add_subdirectory(DRAMsim3)
+
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -15,7 +17,7 @@ target_include_directories(satacc PUBLIC
                     "${CMAKE_CURRENT_SOURCE_DIR}/include"  
                      )
 
-target_link_libraries(satacc PUBLIC fmt sjqcache dramsim3 )
+target_link_libraries(satacc PUBLIC fmt sjqcache dramsim3 minisat_utiles)
 target_link_libraries(satacc PUBLIC intersim2)
 
 aux_source_directory(test TESTSOURCES)

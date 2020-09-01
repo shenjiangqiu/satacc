@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/sjq/git/DRAMsim3/src",
-                "/home/sjq/git/DRAMsim3/ext/headers"
+                "/home/sjq/git/DRAMsim3/ext/headers",
+                "${workspaceFolder}/minisat_utils"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(intersim2)
+add_subdirectory(minisat_utils)
+
 file(GLOB SOURCES *.cpp  allocators/*.cpp arbiters/*.cpp networks/*.cpp power/*.cpp routers/*.cpp)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -27,3 +29,5 @@ target_include_directories(intersim2 PUBLIC
                             "${CMAKE_CURRENT_SOURCE_DIR}/routers")   
                            
 target_include_directories(intersim2 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})       
+
+target_link_libraries(intersim2 PUBLIC minisat_utiles)

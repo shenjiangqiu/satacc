@@ -7,3 +7,6 @@
 [submodule "DRAMsim3"]
 	path = DRAMsim3
 	url = https://github.com/shenjiangqiu/DRAMsim3.git
+[submodule "gpgpu_intersim/minisat_utils"]
+	path = gpgpu_intersim/minisat_utils
+	url = https://github.com/shenjiangqiu/minisat_utils.git
