@@ -50,8 +50,6 @@ char* g_network_config_filename;
 struct inct_config g_inct_config;
 LocalInterconnect* g_localicnt_interface;
 
-#include "option_parser.h"
-
 // Wrapper to intersim2 to accompany old icnt_wrapper
 // TODO: use delegate/boost/c++11<funtion> instead
 

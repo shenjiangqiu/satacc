@@ -1,7 +1,7 @@
 #ifndef PREIVATE_CACHE_H
 #define PREIVATE_CACHE_H
 #include "component.h"
-#include <cache.h>
+#include <sjqcache.h>
 #include <deque>
 #include "cache_interface.h"
 
