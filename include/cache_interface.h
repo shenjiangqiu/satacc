@@ -2,7 +2,7 @@
 #define CACHE_INTERFACE_H
 #include <deque>
 #include "assign_wrap.h"
-#include <cache.h>
+#include <sjqcache.h>
 #include <iostream>
 #include <map>
 #include <vector>
