@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 project(intersim2)
-add_subdirectory(minisat_utils)
 
 file(GLOB SOURCES *.cpp  allocators/*.cpp arbiters/*.cpp networks/*.cpp power/*.cpp routers/*.cpp)
 
