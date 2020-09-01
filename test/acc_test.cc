@@ -3,6 +3,7 @@
 #include "set_up.h"
 #include "cache_interface.h"
 #include <iostream>
+
 TEST_CASE("acc", "[advanced][core][componet]")
 {
     uint64_t current_cycle = 0;
