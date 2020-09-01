@@ -7,3 +7,4 @@ test/dramsim3.txt
 test/dramsim3epoch.json
 src/depend.mk
 test/depend.mk
+build
