@@ -8,7 +8,7 @@ cache_interface::cache_interface(int cache_set_assositive,
                                  int cache_num_sets,
                                  int cache_mshr_entries,
                                  int cache_mshr_maxmerge,
-                                 uint64_t &t) : componet(t), m_cache(cache_set_assositive, cache_num_sets, cache::lru, cache_mshr_entries, cache_mshr_maxmerge, "l3cache"),
+                                 uint64_t &t) : componet(t), m_cache(cache_set_assositive, cache_num_sets, sjq::cache::lru, cache_mshr_entries, cache_mshr_maxmerge, "l3cache"),
                                                 m_mem(
                                                     "DDR4_4Gb_x16_2133_2.ini", "./",
                                                     [this](uint64_t addr) { read_call_back(addr); },
@@ -154,31 +154,31 @@ bool cache_interface::from_in_to_cache()
         auto cache_result = m_cache.try_access(addr, cache_type);
         auto block_addr = addr & ~((1 << 6) - 1);
         //auto cache_result = cache::hit;
-        if (cache_result == cache::resfail)
+        if (cache_result == sjq::cache::resfail)
         {
             return false;
         }
 
-        if (cache_result == cache::miss && miss_queue.size() >= miss_size)
+        if (cache_result == sjq::cache::miss && miss_queue.size() >= miss_size)
         {
             return false;
         }
 
         cache_result = m_cache.access(addr, cache_type);
-        //cache_result = cache::hit;
+        //cache_result = sjq::cache::hit;
         switch (cache_result)
         {
-        case cache::hit:
+        case sjq::cache::hit:
             delay_resp_queue.push_back(std::make_pair(current_cycle, req));
             /* code */
             break;
-        case cache::hit_res:
+        case sjq::cache::hit_res:
 
             assert(!addr_to_req[block_addr].empty()); //must not be empty
             addr_to_req[block_addr].push_back(req);
 
             break;
-        case cache::miss:
+        case sjq::cache::miss:
             assert(addr_to_req[block_addr].empty()); //must be empty
             addr_to_req[block_addr].push_back(req);
             miss_queue.push_back(block_addr);

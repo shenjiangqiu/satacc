@@ -92,7 +92,7 @@ private:
     unsigned delay_q_size = 64;
     unsigned miss_size = 64;
     unsigned in_size = 64;
-    cache m_cache;
+    sjq::cache m_cache;
     dramsim3::MemorySystem m_mem;
 
     std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;

@@ -14,7 +14,7 @@ class private_cache : public componet
 private:
     unsigned in_size = 64;
     unsigned out_size = 64;
-    cache m_cache;
+    sjq::cache m_cache;
     std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;
     bool from_in_to_out();
     bool from_resp_to_send();
