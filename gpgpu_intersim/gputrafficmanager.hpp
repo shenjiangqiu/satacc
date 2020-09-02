@@ -38,6 +38,7 @@
 #include "booksim.hpp"
 #include "booksim_config.hpp"
 #include "flit.hpp"
+#include <mem_req_interface.h>
 
 class GPUTrafficManager : public TrafficManager {
   
