@@ -29,7 +29,7 @@
 #define _BATCHTRAFFICMANAGER_HPP_
 
 #include <iostream>
-
+#include <mem_req_interface.h>
 #include "config_utils.hpp"
 #include "stats.hpp"
 #include "trafficmanager.hpp"

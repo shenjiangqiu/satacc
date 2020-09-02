@@ -1,9 +1,12 @@
 #include "cache_interface.h"
 #include "component.h"
 #include <functional>
+
+
 cache_interface::cache_interface(unsigned int total_size, uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, t)
 {
 }
+
 cache_interface::cache_interface(int cache_set_assositive,
                                  int cache_num_sets,
                                  int cache_mshr_entries,

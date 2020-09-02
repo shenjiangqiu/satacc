@@ -29,4 +29,4 @@ target_include_directories(intersim2 PUBLIC
                            
 target_include_directories(intersim2 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})       
 
-target_link_libraries(intersim2 PUBLIC minisat_utiles)
+target_link_libraries(intersim2 PUBLIC minisat_utiles mem_req_interface)

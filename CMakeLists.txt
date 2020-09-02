@@ -14,7 +14,7 @@ target_include_directories(satacc PUBLIC
                     "${CMAKE_CURRENT_SOURCE_DIR}/include"  
                      )
 
-target_link_libraries(satacc PUBLIC fmt::fmt-header-only sjqcache dramsim3 minisat_utiles)
+target_link_libraries(satacc PUBLIC fmt::fmt-header-only sjqcache dramsim3 minisat_utiles mem_req_interface)
 target_link_libraries(satacc PUBLIC intersim2)
 
 aux_source_directory(test TESTSOURCES)
