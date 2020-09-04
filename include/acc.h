@@ -20,6 +20,7 @@
 class acc : public componet
 {
 private:
+    unsigned private_cache_size;
     /* data */
     unsigned num_watchers;
     unsigned num_clauses;
@@ -29,8 +30,22 @@ private:
     std::vector<clause *> clauses;
     std::vector<private_cache *> m_private_caches;
     cache_interface *m_cache_interface;
+    watcher_list_write_unit* m_watcher_write_unit;
+    clause_writer* m_clause_write_unit;
 
 
+    void init_watcher_and_clause();
+    void add_hook_from_watcher_out_actions();
+    void add_hook_from_clause_to_mem();
+    void add_hook_from_cache_to_clause_and_watchers();
+    void add_hook_from_private_cache();
+    void add_hook_from_trail_to_watcher();
+    void add_hook_from_clause_to_trail();
+    void add_hook_from_watcher_to_writeuite();
+    void add_hook_from_clause_to_writeuint();
+    void add_hook_from_clause_writeunit_to_cache();
+    void add_hook_from_watcher_writeuni_to_cache();
+    
 public:
     std::string get_internal_size() const override
     {

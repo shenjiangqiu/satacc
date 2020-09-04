@@ -1,22 +1,9 @@
 #include "acc.h"
-
-acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &t_current_cycle) : acc(t_num_watchers, t_num_clauses, 1 << 10, 16 << 20, t_current_cycle) {}
-acc::acc(unsigned t_num_watchers,
-         unsigned t_num_clauses,
-         unsigned private_cache_size,
-         unsigned l3_cache_size,
-         uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
-                                     num_watchers(t_num_watchers),
-                                     num_clauses(t_num_clauses)
+#include <mem_req_interface.h>
+#include <icnt_wrapper.h>
+void acc::init_watcher_and_clause()
 {
-    // add the componets s
-    m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
-    m_componets.push_back(m_cache_interface);
-    auto m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
-    auto m_clause_write_unit = new clause_writer(current_cycle);
-    m_componets.push_back(m_watcher_write_unit);
-    m_componets.push_back(m_clause_write_unit);
-
+    //init the components
     for (unsigned i = 0; i < num_watchers; i++)
     {
         auto new_watcher = new watcher(current_cycle);
@@ -33,7 +20,10 @@ acc::acc(unsigned t_num_watchers,
         clauses.push_back(new_clause);
         m_componets.push_back(new_clause);
     }
+}
 
+void acc::add_hook_from_watcher_out_actions()
+{
     //handle from watchers to clauses, and from watchers to memory
     for (unsigned i = 0; i < num_watchers; i++)
     {
@@ -100,7 +90,9 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
-
+}
+void acc::add_hook_from_clause_to_mem()
+{
     //send clause mem request
     for (unsigned i = 0; i < num_clauses; i++)
     {
@@ -143,6 +135,9 @@ acc::acc(unsigned t_num_watchers,
                 return busy;
             });
     } //end for clause
+}
+void acc::add_hook_from_cache_to_clause_and_watchers()
+{
 
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
@@ -202,6 +197,9 @@ acc::acc(unsigned t_num_watchers,
         }
         return busy;
     });
+}
+void acc::add_hook_from_private_cache()
+{
     //from private cache to watchers and clauses.
     for (unsigned i = 0; i < num_watchers; i++)
     {
@@ -233,7 +231,9 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
-
+}
+void acc::add_hook_from_trail_to_watcher()
+{
     //add the pass for from trail to watchers
 
     clock_passes.push_back([this]() -> bool {
@@ -252,7 +252,9 @@ acc::acc(unsigned t_num_watchers,
         ii = (ii + 1) % num_watchers;
         return busy;
     });
-
+}
+void acc::add_hook_from_clause_to_trail()
+{
     // add the pass for from clauses to trail
     for (unsigned i = 0; i < num_clauses; i++)
     {
@@ -269,10 +271,14 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
+}
+void acc::add_hook_from_watcher_to_writeuite()
+{
 
+    //from watcher to watcher write_unit
     for (unsigned i = 0; i < num_watchers; i++)
     {
-        clock_passes.push_back([i, this, m_watcher_write_unit]() {
+        clock_passes.push_back([i, this]() {
             bool busy = false;
             if (!watchers[i]->out_write_watcher_list_queue.empty())
             {
@@ -285,10 +291,14 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
+}
+void acc::add_hook_from_clause_to_writeuint()
+{
 
+    //from clause to clause write unit
     for (unsigned i = 0; i < num_clauses; i++)
     {
-        clock_passes.push_back([i, this, m_clause_write_unit]() {
+        clock_passes.push_back([i, this]() {
             bool busy = false;
             if (!clauses[i]->out_clause_write_queue.empty())
             {
@@ -301,10 +311,13 @@ acc::acc(unsigned t_num_watchers,
             return busy;
         });
     }
+}
 
+void acc::add_hook_from_clause_writeunit_to_cache()
+{
     //TODO from writer to cache
     clock_passes.push_back(
-        [this, m_clause_write_unit]() {
+        [this]() {
             bool busy = false;
             if (!m_clause_write_unit->out.empty() and m_cache_interface->recieve_rdy())
             {
@@ -315,8 +328,17 @@ acc::acc(unsigned t_num_watchers,
             }
             return busy;
         });
+}
+void acc::add_hook_from_watcher_writeuni_to_cache()
+{
 
+#if __cplusplus >= 202002L
+    //good
     clock_passes.push_back([=, this]() {
+#else
+    //from watceher write unit to l3 cache
+    clock_passes.push_back([=]() {
+#endif
         bool busy = false;
         if (!m_watcher_write_unit->out_mem_requst.empty() and m_cache_interface->recieve_rdy())
         {
@@ -327,6 +349,39 @@ acc::acc(unsigned t_num_watchers,
         }
         return busy;
     });
+}
+acc::acc(unsigned t_num_watchers, unsigned t_num_clauses, uint64_t &t_current_cycle) : acc(t_num_watchers, t_num_clauses, 1 << 10, 16 << 20, t_current_cycle) {}
+acc::acc(unsigned t_num_watchers,
+         unsigned t_num_clauses,
+         unsigned private_cache_size,
+         unsigned l3_cache_size,
+         uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
+                                     private_cache_size(private_cache_size),
+                                     num_watchers(t_num_watchers),
+                                     num_clauses(t_num_clauses)
+{
+    //TODO too large in this fuction!!
+    // add the componets s
+    m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
+    m_componets.push_back(m_cache_interface);
+    m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
+    m_clause_write_unit = new clause_writer(current_cycle);
+    m_componets.push_back(m_watcher_write_unit);
+    m_componets.push_back(m_clause_write_unit);
+
+    init_watcher_and_clause();
+
+    
+    add_hook_from_watcher_out_actions();
+    add_hook_from_clause_to_mem();
+    add_hook_from_cache_to_clause_and_watchers();
+    add_hook_from_private_cache();
+    add_hook_from_trail_to_watcher();
+    add_hook_from_clause_to_trail();
+    add_hook_from_watcher_to_writeuite();
+    add_hook_from_clause_to_writeuint();
+    add_hook_from_clause_writeunit_to_cache();
+    add_hook_from_watcher_writeuni_to_cache();
 }
 
 acc::~acc()
