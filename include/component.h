@@ -14,13 +14,27 @@ public:
     //bool busy;
     virtual bool empty() const = 0;
     virtual ~componet() {}
-    virtual bool cycle() = 0;
+    bool cycle()
+    {
+        auto result = do_cycle();
+        if (result)
+        {
+            busy++;
+        }
+        else
+        {
+            idle++;
+        }
+        return result;
+    }
     double get_busy_percent() const
     {
         return double(busy) / double(busy + idle);
     }
 
 protected:
+    virtual bool do_cycle() = 0;
+
     uint64_t busy = 0;
     uint64_t idle = 0;
 };

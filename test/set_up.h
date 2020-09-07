@@ -22,9 +22,9 @@ auto generate_wrap()
         new_wrap3->add_block_addr(i, 600 + i);
     }
     new_wrap1->set_addr(3333);
-    new_wrap1->add_modified_list(0, 1000);
-    new_wrap1->add_modified_list(10, 2000);
-    //new_wrap1->add_modified_list(0, 100);
+    new_wrap1->add_clause_addr(0, 1000);
+    new_wrap1->add_clause_addr(10, 2000);
+    //new_wrap1->add_clause_addr(0, 100);
 
     new_wrap1->add_clause_literal(0, 0);
     new_wrap1->add_clause_literal(0, 2);
@@ -33,7 +33,7 @@ auto generate_wrap()
     new_wrap1->add_detail(0, 12);
     new_wrap1->add_detail(0, 13);
     new_wrap1->add_generated_assignments(10, new_wrap2);
-    new_wrap1->add_modified_list(10, 200);
+    new_wrap1->add_clause_addr(10, 200);
     new_wrap1->add_clause_literal(10, 0);
     new_wrap1->add_clause_literal(10, 2);
     new_wrap1->add_clause_literal(10, 3);
@@ -42,7 +42,7 @@ auto generate_wrap()
     new_wrap1->add_detail(10, 13);
 
     new_wrap2->set_addr(4444);
-    new_wrap2->add_modified_list(0, 200);
+    new_wrap2->add_clause_addr(0, 200);
 
     new_wrap2->add_clause_literal(0, 0);
     new_wrap2->add_clause_literal(0, 1);
@@ -75,9 +75,9 @@ auto generate_wrap_short()
         new_wrap3->add_block_addr(i, 600 + i);
     }
     new_wrap1->set_addr(3333);
-    new_wrap1->add_modified_list(0, 1000);
-    new_wrap1->add_modified_list(10, 2000);
-    //new_wrap1->add_modified_list(0, 100);
+    new_wrap1->add_clause_addr(0, 1000);
+    new_wrap1->add_clause_addr(10, 2000);
+    //new_wrap1->add_clause_addr(0, 100);
 
     new_wrap1->add_clause_literal(0, 0);
     new_wrap1->add_clause_literal(0, 2);
@@ -86,7 +86,7 @@ auto generate_wrap_short()
     new_wrap1->add_detail(0, 12);
     new_wrap1->add_detail(0, 13);
     //new_wrap1->add_generated_assignments(10, new_wrap2);
-    new_wrap1->add_modified_list(10, 200);
+    new_wrap1->add_clause_addr(10, 200);
     new_wrap1->add_clause_literal(10, 0);
     new_wrap1->add_clause_literal(10, 2);
     new_wrap1->add_clause_literal(10, 3);
@@ -95,7 +95,7 @@ auto generate_wrap_short()
     new_wrap1->add_detail(10, 13);
 
     new_wrap2->set_addr(4444);
-    new_wrap2->add_modified_list(0, 200);
+    new_wrap2->add_clause_addr(0, 200);
     new_wrap2->add_clause_literal(0, 0);
     new_wrap2->add_clause_literal(0, 1);
     new_wrap2->add_clause_literal(0, 2);
@@ -147,9 +147,9 @@ auto generate_wrap_para()
     new_wrap4->set_addr(2222);
     new_wrap1->set_addr(3333);
 
-    new_wrap1->add_modified_list(0, 1000);
-    new_wrap1->add_modified_list(10, 2000);
-    //new_wrap1->add_modified_list(0, 100);
+    new_wrap1->add_clause_addr(0, 1000);
+    new_wrap1->add_clause_addr(10, 2000);
+    //new_wrap1->add_clause_addr(0, 100);
 
     new_wrap1->add_clause_literal(0, 0);
     new_wrap1->add_clause_literal(0, 2);
@@ -158,7 +158,7 @@ auto generate_wrap_para()
     new_wrap1->add_detail(0, 12);
     new_wrap1->add_detail(0, 13);
     new_wrap1->add_generated_assignments(10, new_wrap2);
-    new_wrap1->add_modified_list(10, 200);
+    new_wrap1->add_clause_addr(10, 200);
     new_wrap1->add_clause_literal(10, 0);
     new_wrap1->add_clause_literal(10, 2);
     new_wrap1->add_clause_literal(10, 3);
@@ -167,7 +167,7 @@ auto generate_wrap_para()
     new_wrap1->add_detail(10, 13);
 
     new_wrap2->set_addr(4444);
-    new_wrap2->add_modified_list(0, 200);
+    new_wrap2->add_clause_addr(0, 200);
 
     new_wrap2->add_clause_literal(0, 0);
     new_wrap2->add_clause_literal(0, 1);

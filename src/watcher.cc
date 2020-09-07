@@ -1,5 +1,5 @@
 #include "watcher.h"
-
+#include <ptr_copy.hpp>
 watcher::watcher(uint64_t &t) : componet(t)
 {
 }
@@ -8,7 +8,7 @@ watcher::~watcher()
 {
 }
 
-bool watcher::cycle()
+bool watcher::do_cycle()
 {
     bool busy = false;
     busy |= from_value_to_out_mem();
@@ -17,10 +17,6 @@ bool watcher::cycle()
     busy |= from_in_to_read();
     busy |= from_resp_to_insider();
 
-    if (busy)
-        this->busy++;
-    else
-        this->idle++;
     return busy;
 }
 
@@ -30,12 +26,13 @@ bool watcher::from_value_to_out_mem()
     if (!waiting_value_watcher_queue.empty())
     {
         busy = true;
-        auto total_size = (unsigned)waiting_value_watcher_queue.front().as->get_watcher_size();
+        auto total_size = (unsigned)waiting_value_watcher_queue.front()->as->get_watcher_size();
         assert(total_size != 0);
-        auto &current_size = waiting_value_watcher_queue.front().watcherId;
+        auto &current_size = waiting_value_watcher_queue.front()->watcherId;
 
-        out_memory_read_queue.push_back(waiting_value_watcher_queue.front());
-        out_memory_read_queue.back().type = ReadType::WatcherReadValue;
+        //FIXME
+        out_memory_read_queue.push_back(copy_unit_ptr(waiting_value_watcher_queue.front()));
+        out_memory_read_queue.back()->type = ReadType::WatcherReadValue;
 
         current_size += 1;
         if (current_size >= total_size)
@@ -55,27 +52,30 @@ bool watcher::from_process_to_out()
 
     if (!waiting_process_queue.empty())
     {
-        auto total_size = (unsigned)waiting_process_queue.front().as->get_watcher_size();
+        auto total_size = (unsigned)waiting_process_queue.front()->as->get_watcher_size();
         assert(total_size > 0);
         auto &req = waiting_process_queue.front();
-        auto &current_size = waiting_process_queue.front().watcherId;
+        auto &current_size = waiting_process_queue.front()->watcherId;
         busy = true;
 
         if (current_size == 0)
         {
             //the first one, generate the new request
-            out_write_watcher_list_queue.push_back(req);
+            //FIXME
+            out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
         }
         else if (current_size == total_size - 1)
         {
-            out_write_watcher_list_queue.push_back(req);
+            //FIXME
+            out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
             //the last one, generate the clean task
         }
 
-        if (waiting_process_queue.front().as->is_read_clause(current_size))
+        if (req->as->is_read_clause(current_size))
         {
-            out_send_queue.push_back(waiting_process_queue.front());
-            out_send_queue.back().clauseId = 0;
+            //FIXME
+            out_send_queue.push_back(copy_unit_ptr(waiting_process_queue.front()));
+            out_send_queue.back()->clauseId = 0;
         }
         current_size += 1;
         if (current_size >= total_size)
@@ -92,8 +92,8 @@ bool watcher::from_read_watcher_to_mem()
     if (!waiting_read_watcher_queue.empty())
     {
 
-        auto total_size = (unsigned)waiting_read_watcher_queue.front().as->get_watcher_size();
-        auto &current_size = waiting_read_watcher_queue.front().watcherId;
+        auto total_size = (unsigned)waiting_read_watcher_queue.front()->as->get_watcher_size();
+        auto &current_size = waiting_read_watcher_queue.front()->watcherId;
         if (current_size >= total_size) //in case the total size is 0
         {
             waiting_read_watcher_queue.pop_front();
@@ -102,8 +102,9 @@ bool watcher::from_read_watcher_to_mem()
         {
             busy = true;
 
-            out_memory_read_queue.push_back(waiting_read_watcher_queue.front());
-            out_memory_read_queue.back().type = ReadType::ReadWatcher;
+            //FIXME
+            out_memory_read_queue.push_back(copy_unit_ptr(waiting_read_watcher_queue.front()));
+            out_memory_read_queue.back()->type = ReadType::ReadWatcher;
             current_size += 16;
             if (current_size >= total_size) //in case the total size is 0
             {
@@ -120,9 +121,10 @@ bool watcher::from_in_to_read()
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
         busy = true;
-        waiting_read_watcher_queue.push_back(in_task_queue.front());
-        waiting_read_watcher_queue.back().watcherId = 0;
-        assert(waiting_read_watcher_queue.back().as != nullptr);
+        //FIXME
+        waiting_read_watcher_queue.push_back(std::move(in_task_queue.front()));
+        waiting_read_watcher_queue.back()->watcherId = 0;
+        assert(waiting_read_watcher_queue.back()->as != nullptr);
         in_task_queue.pop_front();
     }
     return busy;
@@ -135,16 +137,17 @@ bool watcher::from_resp_to_insider()
     {
         busy = true;
 
-        auto &type = in_memory_resp_queue.front().type;
-        auto &index = in_memory_resp_queue.front().watcherId;
-        auto &as = in_memory_resp_queue.front().as;
+        auto &type = in_memory_resp_queue.front()->type;
+        auto &index = in_memory_resp_queue.front()->watcherId;
+        auto &as = in_memory_resp_queue.front()->as;
         //into waiting_value_watcher_queue
         if (type == ReadType::ReadWatcher and waiting_value_watcher_queue.size() < value_size)
         {
             if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
-                waiting_value_watcher_queue.push_back(in_memory_resp_queue.front());
-                waiting_value_watcher_queue.back().watcherId = 0; //reset to zero
+                //FIXME
+                waiting_value_watcher_queue.push_back(std::move(in_memory_resp_queue.front()));
+                waiting_value_watcher_queue.back()->watcherId = 0; //reset to zero
                 //
             }
             in_memory_resp_queue.pop_front();
@@ -154,8 +157,8 @@ bool watcher::from_resp_to_insider()
         {
             if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {
-                waiting_process_queue.push_back(in_memory_resp_queue.front());
-                waiting_process_queue.back().watcherId = 0;
+                waiting_process_queue.push_back(std::move(in_memory_resp_queue.front()));
+                waiting_process_queue.back()->watcherId = 0;
                 //
             }
             in_memory_resp_queue.pop_front();

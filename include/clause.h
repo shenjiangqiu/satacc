@@ -10,6 +10,9 @@
 class clause : public componet
 {
     using pair_int_as = std::pair<int, assign_wrap *>;
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
     /* data */
@@ -26,9 +29,9 @@ private:
 
     bool process_waiting_to_out(); //process the clause and send out
 
-    std::deque<cache_interface_req> clause_data_read_waiting_queue;
-    std::deque<cache_interface_req> clause_value_read_waiting_queue;
-    std::deque<cache_interface_req> clause_process_waiting_queue;
+    std::deque<req_ptr> clause_data_read_waiting_queue;
+    std::deque<req_ptr> clause_value_read_waiting_queue;
+    std::deque<req_ptr> clause_process_waiting_queue;
 
 public:
     std::string get_internal_size() const override
@@ -63,18 +66,20 @@ public:
         return in_memory_resp_queue.size() < in_mem_size;
     }
 
-    bool cycle() override;
     clause(uint64_t &tcurrent_cycle);
     ~clause();
 
-    std::deque<cache_interface_req> in_task_queue;
-    std::deque<cache_interface_req> out_queue;
+    std::deque<req_ptr> in_task_queue;
+    std::deque<req_ptr> out_queue;
 
-    std::deque<cache_interface_req> out_memory_read_queue; //int:flag
-    std::deque<cache_interface_req> in_memory_resp_queue;
+    std::deque<req_ptr> out_memory_read_queue; //int:flag
+    std::deque<req_ptr> in_memory_resp_queue;
 
-    //std::deque<cache_interface_req> out_watcher_list_write_queue;
-    std::deque<cache_interface_req> out_clause_write_queue;
+    //std::deque<req_ptr> out_watcher_list_write_queue;
+    std::deque<req_ptr> out_clause_write_queue;
+
+protected:
+    virtual bool do_cycle() override;
 };
 
 #endif

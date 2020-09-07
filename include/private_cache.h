@@ -5,17 +5,18 @@
 #include <deque>
 #include "cache_interface.h"
 
-
 //this file used for watcher's value private cache.
 
 class private_cache : public componet
 {
-
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
 private:
     unsigned in_size = 64;
     unsigned out_size = 64;
     sjq::cache m_cache;
-    std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;
+    std::map<uint64_t, std::vector<req_ptr>> addr_to_req;
     bool from_in_to_out();
     bool from_resp_to_send();
 
@@ -50,14 +51,15 @@ public:
                in_resp.empty() and
                addr_to_req.empty();
     }
-    std::deque<cache_interface_req> in_request;
-    std::deque<cache_interface_req> out_send_q;
-    std::deque<cache_interface_req> out_miss_queue;
-    std::deque<cache_interface_req> in_resp;
+    std::deque<req_ptr> in_request;
+    std::deque<req_ptr> out_send_q;
+    std::deque<req_ptr> out_miss_queue;
+    std::deque<req_ptr> in_resp;
 
     private_cache(int asso, int total_size, uint64_t &current_cycle);
 
-    bool cycle() override;
+protected:
+    virtual bool do_cycle() override;
 };
 
 #endif

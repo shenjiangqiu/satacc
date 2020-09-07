@@ -2,7 +2,6 @@
 #include "component.h"
 #include <functional>
 
-
 cache_interface::cache_interface(unsigned int total_size, uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, t)
 {
 }
@@ -28,7 +27,7 @@ void cache_interface::write_call_back(uint64_t addr)
 {
     dram_resp_queue.push_back(addr);
 }
-bool cache_interface::cycle()
+bool cache_interface::do_cycle()
 {
     bool busy = false;
     //current_cycle++;
@@ -40,10 +39,6 @@ bool cache_interface::cycle()
     busy |= from_miss_q_to_dram();
     busy |= from_in_to_cache();
 
-    if (busy)
-        this->busy++;
-    else
-        this->idle++;
     return busy;
     //from missq to dram
 
@@ -60,7 +55,7 @@ bool cache_interface::from_delayresp_to_out()
         {
             //busy = true;
             auto &req = delay_resp_queue.front().second;
-            out_resp_queue.push_back(req);
+            out_resp_queue.push_back(std::move(req));
             delay_resp_queue.pop_front();
         }
     }
@@ -80,7 +75,7 @@ bool cache_interface::from_dramresp_to_resp()
         auto &v = addr_to_req[addr];
         for (auto &i : v)
         {
-            delay_resp_queue.push_back(std::make_pair(componet::current_cycle, i));
+            delay_resp_queue.push_back(std::make_pair(componet::current_cycle, std::move(i)));
         }
         addr_to_req.erase(addr);
     }
@@ -105,14 +100,14 @@ bool cache_interface::from_in_to_cache()
     if (!in_request_queue.empty() and miss_queue.size() < miss_size)
     {
         busy = true;
-        //TO-DO write access cache logic here!
+
         //step one: get addr for this request.
 
         auto &req = in_request_queue.front();
-        auto &as = req.as;
-        auto type = req.type;
-        auto watcherId = req.watcherId;
-        auto clauseId = req.clauseId;
+        auto &as = req->as;
+        auto type = req->type;
+        auto watcherId = req->watcherId;
+        auto clauseId = req->clauseId;
         uint64_t addr = 0;
         int cache_type = 0;
         access_hist[(int)type]++;
@@ -172,18 +167,19 @@ bool cache_interface::from_in_to_cache()
         switch (cache_result)
         {
         case sjq::cache::hit:
-            delay_resp_queue.push_back(std::make_pair(current_cycle, req));
+
+            delay_resp_queue.push_back(std::make_pair(current_cycle, std::move(req)));
             /* code */
             break;
         case sjq::cache::hit_res:
 
             assert(!addr_to_req[block_addr].empty()); //must not be empty
-            addr_to_req[block_addr].push_back(req);
+            addr_to_req[block_addr].push_back(std::move(req));
 
             break;
         case sjq::cache::miss:
             assert(addr_to_req[block_addr].empty()); //must be empty
-            addr_to_req[block_addr].push_back(req);
+            addr_to_req[block_addr].push_back(std::move(req));
             miss_queue.push_back(block_addr);
 
             break;

@@ -12,8 +12,8 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("long")
     {
         auto as = generate_wrap();
-        auto req = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as);
-        m_acc.in_m_trail.push_back(req);
+        auto req = std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, as);
+        m_acc.in_m_trail.push_back(std::move(req));
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;
@@ -27,8 +27,8 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("short")
     {
         auto as = generate_wrap_short();
-        auto req = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as);
-        m_acc.in_m_trail.push_back(req);
+        auto req = std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, as);
+        m_acc.in_m_trail.push_back(std::move(req));
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;
@@ -42,11 +42,11 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("parallel")
     {
         auto as = generate_wrap_para();
-        auto req1 = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as.first);
-        auto req2 = cache_interface_req(ReadType::ReadWatcher, 0, 0, 0, as.second);
+        auto req1 = std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, as.first);
+        auto req2 = std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, as.second);
 
-        m_acc.in_m_trail.push_back(req1);
-        m_acc.in_m_trail.push_back(req2);
+        m_acc.in_m_trail.push_back(std::move(req1));
+        m_acc.in_m_trail.push_back(std::move(req2));
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;

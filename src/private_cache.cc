@@ -1,18 +1,14 @@
 #include "private_cache.h"
-
+#include <ptr_copy.hpp>
 private_cache::private_cache(int asso, int total_size, uint64_t &tcurrent_cycle) : componet(tcurrent_cycle), m_cache(asso, total_size)
 {
 }
 
-bool private_cache::cycle()
+bool private_cache::do_cycle()
 {
     bool busy = false;
     busy |= from_in_to_out();
     busy |= from_resp_to_send();
-    if (busy)
-        this->busy++;
-    else
-        idle++;
     return busy;
 }
 
@@ -23,12 +19,12 @@ bool private_cache::from_in_to_out()
     if (!in_request.empty() and out_send_q.size() < out_size)
     {
         auto &req = in_request.front();
-        auto as = req.as;
-        auto watcherId = req.watcherId;
-        auto clauseId = req.clauseId;
+        auto as = req->as;
+        auto watcherId = req->watcherId;
+        auto clauseId = req->clauseId;
         int cache_type = 0;
         uint64_t addr = 0;
-        switch (req.type)
+        switch (req->type)
         {
         case ReadType::WatcherReadValue:
             /* code */
@@ -57,18 +53,19 @@ bool private_cache::from_in_to_out()
             result = m_cache.access(block_addr, cache_type);
             switch (result)
             {
+                //FIXME copy or move here
             case sjq::cache::hit:
-                out_send_q.push_back(req);
+                out_send_q.push_back(std::move(req));
                 /* code */
                 break;
             case sjq::cache::hit_res:
                 assert(addr_to_req.find(block_addr) != addr_to_req.end());
-                addr_to_req[block_addr].push_back(req);
+                addr_to_req[block_addr].push_back(std::move(req));
                 break;
             case sjq::cache::miss:
-                out_miss_queue.push_back(req);
+                out_miss_queue.push_back(copy_unit_ptr(req));
                 assert(addr_to_req.find(block_addr) == addr_to_req.end());
-                addr_to_req[block_addr].push_back(req);
+                addr_to_req[block_addr].push_back(std::move(req));
                 break;
             default:
                 throw;
@@ -90,12 +87,12 @@ bool private_cache::from_resp_to_send()
         busy = true;
 
         auto &req = in_resp.front();
-        auto as = req.as;
-        auto watcherId = req.watcherId;
-        auto clauseId = req.clauseId;
+        auto as = req->as;
+        auto watcherId = req->watcherId;
+        auto clauseId = req->clauseId;
         //int cache_type = 0;
         uint64_t addr = 0;
-        switch (req.type)
+        switch (req->type)
         {
         case ReadType::WatcherReadValue:
             /* code */
@@ -121,7 +118,7 @@ bool private_cache::from_resp_to_send()
         for (auto &i : v)
         {
             //std::cout << "out send q push:" << i << std::endl;
-            out_send_q.push_back(i);
+            out_send_q.push_back(std::move(i));
         }
 
         addr_to_req.erase(block_addr);

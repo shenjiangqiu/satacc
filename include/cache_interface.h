@@ -13,9 +13,12 @@
 #include <fmt/ranges.h>
 #include <mem_req_interface.h>
 
-
 class cache_interface : public componet
 {
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
+
 private:
     unsigned cache_delay = 2;
     unsigned delay_q_size = 64;
@@ -24,9 +27,9 @@ private:
     sjq::cache m_cache;
     dramsim3::MemorySystem m_mem;
 
-    std::map<uint64_t, std::vector<cache_interface_req>> addr_to_req;
+    std::map<uint64_t, std::vector<req_ptr>> addr_to_req;
 
-    std::deque<std::pair<uint64_t, cache_interface_req>> delay_resp_queue;
+    std::deque<std::pair<uint64_t, req_ptr>> delay_resp_queue;
     std::deque<uint64_t> miss_queue;
 
     std::deque<uint64_t> dram_resp_queue;
@@ -65,7 +68,7 @@ public:
         return delay_resp_queue.empty() and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and
                in_request_queue.empty() and out_resp_queue.empty();
     }
-    bool cycle() override;
+
     bool recieve_rdy() const
     {
         return in_request_queue.size() < in_size;
@@ -75,8 +78,11 @@ public:
     ~cache_interface();
 
     //interfaces
-    std::deque<cache_interface_req> in_request_queue;
-    std::deque<cache_interface_req> out_resp_queue;
+    std::deque<req_ptr> in_request_queue;
+    std::deque<req_ptr> out_resp_queue;
+
+protected:
+    virtual bool do_cycle() override;
 };
 
 #endif

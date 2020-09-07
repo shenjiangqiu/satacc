@@ -18,6 +18,10 @@
 */
 class clause_writer : public componet
 {
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
+
 public:
     virtual std::string get_internal_size() const override
     {
@@ -31,13 +35,16 @@ public:
     {
         return in.empty() and out.empty();
     }
-    virtual bool cycle() override;
+
     clause_writer(uint64_t &ct) : componet(ct) {}
-    std::deque<cache_interface_req> in;
-    std::deque<cache_interface_req> out;
+    std::deque<req_ptr> in;
+    std::deque<req_ptr> out;
 
 private:
     uint64_t write_one = 0;
     uint64_t write_two = 0;
+
+protected:
+    virtual bool do_cycle() override;
 };
 #endif

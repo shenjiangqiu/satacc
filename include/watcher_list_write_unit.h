@@ -43,6 +43,10 @@
 */
 class watcher_list_write_unit : public componet
 {
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
+
 private:
     /* data */
     //the map: the watcher list and current  number of the merge of 'the other' watcher list.
@@ -74,14 +78,16 @@ public:
     {
         return in_request.empty() and out_mem_requst.empty() and current_map.empty();
     }
-    virtual bool cycle() override;
 
     //watcher_list_write_unit(uint64_t &current_cycle);
     ~watcher_list_write_unit();
 
     //the queue for in_request
-    std::deque<cache_interface_req> in_request;
-    std::deque<cache_interface_req> out_mem_requst;
+    std::deque<req_ptr> in_request;
+    std::deque<req_ptr> out_mem_requst;
+
+protected:
+    bool do_cycle() override;
 };
 
 #endif

@@ -19,6 +19,10 @@
 #include "clause_writer.h"
 class acc : public componet
 {
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
+
 private:
     unsigned private_cache_size;
     /* data */
@@ -30,9 +34,8 @@ private:
     std::vector<clause *> clauses;
     std::vector<private_cache *> m_private_caches;
     cache_interface *m_cache_interface;
-    watcher_list_write_unit* m_watcher_write_unit;
-    clause_writer* m_clause_write_unit;
-
+    watcher_list_write_unit *m_watcher_write_unit;
+    clause_writer *m_clause_write_unit;
 
     void init_watcher_and_clause();
     void add_hook_from_watcher_out_actions();
@@ -45,7 +48,7 @@ private:
     void add_hook_from_clause_to_writeuint();
     void add_hook_from_clause_writeunit_to_cache();
     void add_hook_from_watcher_writeuni_to_cache();
-    
+
 public:
     std::string get_internal_size() const override
     {
@@ -73,12 +76,14 @@ public:
     {
         return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto c) { return c->empty(); });
     }
-    std::deque<cache_interface_req> in_m_trail;
+    std::deque<req_ptr> in_m_trail;
 
-    bool cycle() override;
     acc(unsigned num_watchers, unsigned num_clauses, uint64_t &tcurrent_cycle);
     acc(unsigned, unsigned, unsigned, unsigned, uint64_t &);
     ~acc();
+
+protected:
+    virtual bool do_cycle() override;
 };
 
 #endif

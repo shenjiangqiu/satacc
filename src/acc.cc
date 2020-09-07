@@ -40,24 +40,25 @@ void acc::add_hook_from_watcher_out_actions()
             if (!watchers.at(watcher_id)->out_send_queue.empty() and clauses.at(clause_id)->recieve_rdy())
             {
                 busy = true;
-                clauses[clause_id]->in_task_queue.push_back(watchers[watcher_id]->out_send_queue.front());
+                clauses[clause_id]->in_task_queue.push_back(std::move(watchers[watcher_id]->out_send_queue.front()));
                 watchers[watcher_id]->out_send_queue.pop_front();
             }
 
             //send the memory request to cache interfase //it's direct to l3 cache
             if (!watchers[watcher_id]->out_memory_read_queue.empty())
             {
-                if (watchers[watcher_id]->out_memory_read_queue.front().type == ReadType::ReadWatcher)
+                if (watchers[watcher_id]->out_memory_read_queue.front()->type == ReadType::ReadWatcher)
                 {
                     if (m_cache_interface->recieve_rdy())
                     {
                         busy = true;
-                        assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
-                        const auto &req = watchers[watcher_id]->out_memory_read_queue.front();
+                        assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
+                        auto req = std::move(watchers[watcher_id]->out_memory_read_queue.front());
 
-                        assert(req.type == ReadType::ReadWatcher);
-                        m_cache_interface->in_request_queue.push_back(req);
-                        m_cache_interface->in_request_queue.back().ComponentId = watcher_id;
+                        assert(req->type == ReadType::ReadWatcher);
+                        //error here
+                        m_cache_interface->in_request_queue.push_back(std::move(req));
+                        m_cache_interface->in_request_queue.back()->ComponentId = watcher_id;
 
                         watchers[watcher_id]->out_memory_read_queue.pop_front();
                     }
@@ -65,16 +66,18 @@ void acc::add_hook_from_watcher_out_actions()
                 //send private cache to cache//to private cache!!
                 else
                 {
-                    assert(watchers[watcher_id]->out_memory_read_queue.front().type == ReadType::WatcherReadValue);
+                    assert(watchers[watcher_id]->out_memory_read_queue.front()->type == ReadType::WatcherReadValue);
                     if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_private_caches[watcher_id]->recieve_rdy())
                     {
                         busy = true;
-                        assert(watchers[watcher_id]->out_memory_read_queue.front().as != nullptr);
-                        const auto &req = watchers[watcher_id]->out_memory_read_queue.front();
+                        assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
+                        auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-                        assert(req.type == ReadType::WatcherReadValue);
-                        m_private_caches[watcher_id]->in_request.push_back(req);
-                        m_private_caches[watcher_id]->in_request.back().ComponentId = watcher_id;
+                        assert(req->type == ReadType::WatcherReadValue);
+                        //ERROR here
+                        //FIXME
+                        m_private_caches[watcher_id]->in_request.push_back(std::move(req));
+                        m_private_caches[watcher_id]->in_request.back()->ComponentId = watcher_id;
 
                         watchers[watcher_id]->out_memory_read_queue.pop_front();
                     }
@@ -84,7 +87,7 @@ void acc::add_hook_from_watcher_out_actions()
             if (!m_private_caches[watcher_id]->out_miss_queue.empty() and m_cache_interface->recieve_rdy())
             {
                 busy = true;
-                m_cache_interface->in_request_queue.push_back(m_private_caches[watcher_id]->out_miss_queue.front());
+                m_cache_interface->in_request_queue.push_back(std::move(m_private_caches[watcher_id]->out_miss_queue.front()));
                 m_private_caches[watcher_id]->out_miss_queue.pop_front();
             }
             return busy;
@@ -103,14 +106,14 @@ void acc::add_hook_from_clause_to_mem()
                 bool busy = false;
                 if (!clauses[clauseId]->out_memory_read_queue.empty())
                 {
-                    if (clauses[clauseId]->out_memory_read_queue.front().type == ReadType::ReadClauseData)
+                    if (clauses[clauseId]->out_memory_read_queue.front()->type == ReadType::ReadClauseData)
                     {
                         if (m_cache_interface->recieve_rdy())
                         {
                             busy = true;
-                            assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
-                            m_cache_interface->in_request_queue.push_back(clauses[clauseId]->out_memory_read_queue.front());
-                            m_cache_interface->in_request_queue.back().ComponentId = clauseId + num_watchers;
+                            assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
+                            m_cache_interface->in_request_queue.push_back(std::move(clauses[clauseId]->out_memory_read_queue.front()));
+                            m_cache_interface->in_request_queue.back()->ComponentId = clauseId + num_watchers;
 
                             clauses[clauseId]->out_memory_read_queue.pop_front();
                         }
@@ -118,14 +121,14 @@ void acc::add_hook_from_clause_to_mem()
                     else
                     {
                         //push value request to private cache
-                        assert(clauses[clauseId]->out_memory_read_queue.front().type == ReadType::ReadClauseValue);
+                        assert(clauses[clauseId]->out_memory_read_queue.front()->type == ReadType::ReadClauseValue);
                         auto watcherId = clauseId / (num_clauses / num_watchers);
                         if (m_private_caches[watcherId]->recieve_rdy())
                         {
                             busy = true;
-                            assert(clauses[clauseId]->out_memory_read_queue.front().as != nullptr);
-                            m_private_caches[watcherId]->in_request.push_back(clauses[clauseId]->out_memory_read_queue.front());
-                            m_private_caches[watcherId]->in_request.back().ComponentId = clauseId + num_watchers;
+                            assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
+                            m_private_caches[watcherId]->in_request.push_back(std::move(clauses[clauseId]->out_memory_read_queue.front()));
+                            m_private_caches[watcherId]->in_request.back()->ComponentId = clauseId + num_watchers;
 
                             clauses[clauseId]->out_memory_read_queue.pop_front();
                         }
@@ -145,20 +148,20 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
 
         if (!m_cache_interface->out_resp_queue.empty())
         {
-            auto component_id = m_cache_interface->out_resp_queue.front().ComponentId;
+            auto component_id = m_cache_interface->out_resp_queue.front()->ComponentId;
             if (component_id >= num_watchers)
             {
                 //the case it's a clause request
 
                 int clause_id = component_id - num_watchers;
 
-                if (m_cache_interface->out_resp_queue.front().type == ReadType::ReadClauseData)
+                if (m_cache_interface->out_resp_queue.front()->type == ReadType::ReadClauseData)
                 { //send to cleause
                     if (clauses[clause_id]->recieve_mem_rdy())
                     {
                         busy = true;
 
-                        clauses[clause_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                        clauses[clause_id]->in_memory_resp_queue.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                         m_cache_interface->out_resp_queue.pop_front();
                     }
                 }
@@ -166,9 +169,9 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                 {
                     //send to private cache
 
-                    assert(m_cache_interface->out_resp_queue.front().type == ReadType::ReadClauseValue);
+                    assert(m_cache_interface->out_resp_queue.front()->type == ReadType::ReadClauseValue);
                     int watcherId = clause_id / (num_clauses / num_watchers);
-                    m_private_caches[watcherId]->in_resp.push_back(m_cache_interface->out_resp_queue.front());
+                    m_private_caches[watcherId]->in_resp.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                     m_cache_interface->out_resp_queue.pop_front();
                 }
             }
@@ -176,21 +179,21 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
             {
                 //the case it's a watcher request
                 int watcher_id = component_id;
-                if (m_cache_interface->out_resp_queue.front().type == ReadType::ReadWatcher)
+                if (m_cache_interface->out_resp_queue.front()->type == ReadType::ReadWatcher)
                 {
                     //it's a watcher data request , send to watcher
                     if (watchers[watcher_id]->recieve_mem_rdy())
                     {
                         busy = true;
-                        watchers[watcher_id]->in_memory_resp_queue.push_back(m_cache_interface->out_resp_queue.front());
+                        watchers[watcher_id]->in_memory_resp_queue.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                         m_cache_interface->out_resp_queue.pop_front();
                     }
                 }
                 else
                 {
-                    assert(m_cache_interface->out_resp_queue.front().type == ReadType::WatcherReadValue);
+                    assert(m_cache_interface->out_resp_queue.front()->type == ReadType::WatcherReadValue);
                     //int watcherId = clause_id / (num_clauses / num_watchers);
-                    m_private_caches[watcher_id]->in_resp.push_back(m_cache_interface->out_resp_queue.front());
+                    m_private_caches[watcher_id]->in_resp.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                     m_cache_interface->out_resp_queue.pop_front();
                 }
             }
@@ -209,22 +212,22 @@ void acc::add_hook_from_private_cache()
             if (!m_private_caches[watcherId]->out_send_q.empty())
             {
                 busy = true;
-                auto req = m_private_caches[watcherId]->out_send_q.front();
-                if (req.type == ReadType::ReadClauseValue)
+                auto &req = m_private_caches[watcherId]->out_send_q.front();
+                if (req->type == ReadType::ReadClauseValue)
                 {
-                    assert(req.ComponentId >= num_watchers);
-                    auto clauseId = req.ComponentId - num_watchers;
+                    assert(req->ComponentId >= num_watchers);
+                    auto clauseId = req->ComponentId - num_watchers;
                     assert(clauseId / (num_clauses / num_watchers) == watcherId);
 
-                    clauses[clauseId]->in_memory_resp_queue.push_back(req);
+                    clauses[clauseId]->in_memory_resp_queue.push_back(std::move(req));
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 }
                 else
                 {
-                    assert(req.type == ReadType::WatcherReadValue);
-                    assert(req.ComponentId == watcherId);
+                    assert(req->type == ReadType::WatcherReadValue);
+                    assert(req->ComponentId == watcherId);
                     //std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
-                    watchers[watcherId]->in_memory_resp_queue.push_back(req);
+                    watchers[watcherId]->in_memory_resp_queue.push_back(std::move(req));
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 }
             }
@@ -244,8 +247,8 @@ void acc::add_hook_from_trail_to_watcher()
         if (!in_m_trail.empty() and watchers[watcher_id]->recieve_rdy())
         {
             busy = true;
-            assert(in_m_trail.front().as != nullptr);
-            watchers[watcher_id]->in_task_queue.push_back(in_m_trail.front());
+            assert(in_m_trail.front()->as != nullptr);
+            watchers[watcher_id]->in_task_queue.push_back(std::move(in_m_trail.front()));
             in_m_trail.pop_front();
         }
         //change to another watcher now
@@ -264,8 +267,8 @@ void acc::add_hook_from_clause_to_trail()
             if (!clauses[clause_id]->out_queue.empty())
             {
                 busy = true;
-                assert(clauses[clause_id]->out_queue.front().as != nullptr);
-                in_m_trail.push_back(clauses[clause_id]->out_queue.front());
+                assert(clauses[clause_id]->out_queue.front()->as != nullptr);
+                in_m_trail.push_back(std::move(clauses[clause_id]->out_queue.front()));
                 clauses[clause_id]->out_queue.pop_front();
             }
             return busy;
@@ -283,8 +286,8 @@ void acc::add_hook_from_watcher_to_writeuite()
             if (!watchers[i]->out_write_watcher_list_queue.empty())
             {
                 busy = true;
-                auto req = watchers[i]->out_write_watcher_list_queue.front();
-                m_watcher_write_unit->in_request.push_back(req);
+                auto &req = watchers[i]->out_write_watcher_list_queue.front();
+                m_watcher_write_unit->in_request.push_back(std::move(req));
                 watchers[i]->out_write_watcher_list_queue.pop_front();
             }
 
@@ -303,8 +306,8 @@ void acc::add_hook_from_clause_to_writeuint()
             if (!clauses[i]->out_clause_write_queue.empty())
             {
                 busy = true;
-                auto req = clauses[i]->out_clause_write_queue.front();
-                m_clause_write_unit->in.push_back(req);
+                auto &req = clauses[i]->out_clause_write_queue.front();
+                m_clause_write_unit->in.push_back(std::move(req));
                 clauses[i]->out_clause_write_queue.pop_front();
             }
 
@@ -322,8 +325,8 @@ void acc::add_hook_from_clause_writeunit_to_cache()
             if (!m_clause_write_unit->out.empty() and m_cache_interface->recieve_rdy())
             {
                 busy = true;
-                auto req = m_clause_write_unit->out.front();
-                m_cache_interface->in_request_queue.push_back(req);
+                auto &req = m_clause_write_unit->out.front();
+                m_cache_interface->in_request_queue.push_back(std::move(req));
                 m_clause_write_unit->out.pop_front();
             }
             return busy;
@@ -342,9 +345,10 @@ void acc::add_hook_from_watcher_writeuni_to_cache()
         bool busy = false;
         if (!m_watcher_write_unit->out_mem_requst.empty() and m_cache_interface->recieve_rdy())
         {
-            auto req = m_watcher_write_unit->out_mem_requst.front();
+            auto &req = m_watcher_write_unit->out_mem_requst.front();
+
+            m_cache_interface->in_request_queue.push_back(std::move(req));
             m_watcher_write_unit->out_mem_requst.pop_front();
-            m_cache_interface->in_request_queue.push_back(req);
             busy = true;
         }
         return busy;
@@ -371,7 +375,6 @@ acc::acc(unsigned t_num_watchers,
 
     init_watcher_and_clause();
 
-    
     add_hook_from_watcher_out_actions();
     add_hook_from_clause_to_mem();
     add_hook_from_cache_to_clause_and_watchers();
@@ -392,7 +395,7 @@ acc::~acc()
     }
 }
 
-bool acc::cycle()
+bool acc::do_cycle()
 {
     bool busy = false;
     //data transimission for all the components
@@ -406,9 +409,5 @@ bool acc::cycle()
     {
         busy |= c->cycle();
     }
-    if (busy)
-        this->busy++;
-    else
-        this->idle++;
     return busy;
 }

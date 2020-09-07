@@ -9,6 +9,9 @@
 class watcher : public componet
 {
     using pair_int_as = std::pair<int, assign_wrap *>;
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
     unsigned read_size = 64;
@@ -40,9 +43,9 @@ private:
     //from in_memory_resp_queuue to inside queue
     bool from_resp_to_insider();
 
-    std::deque<cache_interface_req> waiting_value_watcher_queue; // int : remaining value to be processed
-    std::deque<cache_interface_req> waiting_read_watcher_queue;  // int: remaing watcher to be read
-    std::deque<cache_interface_req> waiting_process_queue;       // int : remaining watcher to be processed
+    std::deque<req_ptr> waiting_value_watcher_queue; // int : remaining value to be processed
+    std::deque<req_ptr> waiting_read_watcher_queue;  // int: remaing watcher to be read
+    std::deque<req_ptr> waiting_process_queue;       // int : remaining watcher to be processed
     int next_clause = 0;
     /* data */
 public:
@@ -81,18 +84,20 @@ public:
     {
         return in_memory_resp_queue.size() < in_mem_size;
     }
-    std::deque<cache_interface_req> in_task_queue;
+    std::deque<req_ptr> in_task_queue;
     // interface
-    std::deque<cache_interface_req> out_send_queue;
+    std::deque<req_ptr> out_send_queue;
 
-    std::deque<cache_interface_req> out_memory_read_queue; //int:flag
-    std::deque<cache_interface_req> in_memory_resp_queue;
+    std::deque<req_ptr> out_memory_read_queue; //int:flag
+    std::deque<req_ptr> in_memory_resp_queue;
 
-    std::deque<cache_interface_req> out_write_watcher_list_queue;
+    std::deque<req_ptr> out_write_watcher_list_queue;
 
-    bool cycle() override;
     watcher(uint64_t &t);
     ~watcher();
+
+protected:
+    bool do_cycle() override;
 };
 
 #endif
