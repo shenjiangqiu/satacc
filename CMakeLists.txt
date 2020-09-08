@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(SatAcc VERSION 0.0.1)
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED COMPONENTS log  program_options log log_setup)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -DBOOST_LOG_DYN_LINK")
 
 aux_source_directory(src SOURCES)
 

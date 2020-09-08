@@ -40,71 +40,71 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
     m_c.current_cycle = 0;
     SECTION("first test")
     {
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
-        while (m_c.out_resp_queue.empty())
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadClauseData, 0, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
-        while (m_c.out_resp_queue.empty())
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
-        while (m_c.out_resp_queue.empty())
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
-        while (m_c.out_resp_queue.empty())
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
         //bank burst test
         std::cout << " burst current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
 
-        REQUIRE(m_c.out_resp_queue.empty() == true);
-        while (m_c.out_resp_queue.empty())
+        REQUIRE(m_c.out_resp_queues[0].empty() == true);
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
-        while (m_c.out_resp_queue.empty())
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
 
         std::cout << "current cycle:" << current_cycle << std::endl;
     }
@@ -114,24 +114,24 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
         current_cycle = 0;
         std::cout << " burst current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
-        m_c.in_request_queue.push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 16, 0, 0, new_wrap1));
 
-        REQUIRE(m_c.out_resp_queue.empty() == true);
-        while (m_c.out_resp_queue.empty())
+        REQUIRE(m_c.out_resp_queues[0].empty() == true);
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
-        while (m_c.out_resp_queue.empty())
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
+        while (m_c.out_resp_queues[0].empty())
         {
             m_c.cycle();
             current_cycle++;
         }
-        std::cout << *m_c.out_resp_queue.front() << std::endl;
-        m_c.out_resp_queue.pop_front();
+        std::cout << *m_c.out_resp_queues[0].front() << std::endl;
+        m_c.out_resp_queues[0].pop_front();
 
         std::cout << "current cycle:" << current_cycle << std::endl;
     }

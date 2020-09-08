@@ -7,3 +7,4 @@ TEST_CASE("UNIPTR_TEST", "[basic],[tools]")
     auto b = std::move(a);
     //REQUIRE_THROWS(std::cout << *a << std::endl);
 }
+

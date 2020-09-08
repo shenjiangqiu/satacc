@@ -26,7 +26,7 @@ private:
     bool has_buffer(unsigned source, unsigned size) const;
     unsigned get_pkg_size(unsigned source, unsigned dest, const req_ptr &req) const;
     unsigned get_mem_id(const req_ptr &req) const;
-    std::unordered_set<cache_interface_req *> current_inflight_pkg;//do not own the ownership
+    std::unordered_set<cache_interface_req *> current_inflight_pkg; //do not own the ownership
 
 public:
     virtual std::string get_internal_size() const override;
@@ -41,7 +41,13 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
 
-    virtual bool empty() const;
+    virtual bool empty() const
+    {
+        return std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
+               std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
+               std::all_of(in_resps.begin(), in_resps.end(), [](auto &q) { return q.empty(); }) and
+               std::all_of(out_resps.begin(), out_resps.end(), [](auto &q) { return q.empty(); });
+    }
 
     icnt(uint64_t &current_cycle, int num_cores, int num_mems, int n_clauses);
     //we don't want some global variable to init twice

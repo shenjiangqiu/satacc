@@ -17,6 +17,7 @@
 #include "private_cache.h"
 #include "watcher_list_write_unit.h"
 #include "clause_writer.h"
+#include <sjq_intersim.h>
 class acc : public componet
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
@@ -33,9 +34,11 @@ private:
     std::vector<watcher *> watchers;
     std::vector<clause *> clauses;
     std::vector<private_cache *> m_private_caches;
+
     cache_interface *m_cache_interface;
     watcher_list_write_unit *m_watcher_write_unit;
     clause_writer *m_clause_write_unit;
+    icnt *m_icnt;
 
     void init_watcher_and_clause();
     void add_hook_from_watcher_out_actions();
@@ -46,8 +49,9 @@ private:
     void add_hook_from_clause_to_trail();
     void add_hook_from_watcher_to_writeuite();
     void add_hook_from_clause_to_writeuint();
-    void add_hook_from_clause_writeunit_to_cache();
-    void add_hook_from_watcher_writeuni_to_cache();
+    void add_hook_from_clause_write_unit_to_cache();
+    void add_hook_from_watcher_write_unit_to_cache();
+    void add_hook_from_icnt_to_other();
 
 public:
     std::string get_internal_size() const override
