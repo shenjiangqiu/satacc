@@ -2,6 +2,16 @@
 #include <enumerate.h>
 #include <boost/log/trivial.hpp>
 #include <exception>
+#include <req_addr.h>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+
+namespace logging = boost::log;
+void init_log()
+{
+    logging::core::get()->set_filter(
+        logging::trivial::severity >= logging::trivial::error);
+}
 icnt::icnt(uint64_t &current_cycle,
            int num_cores,
            int num_mem,
@@ -20,15 +30,32 @@ icnt::icnt(uint64_t &current_cycle,
     icnt_wrapper_init(); //create the wrapper, setup this functions
     icnt_create(num_cores, num_mem);
     icnt_init();
+    init_log();
 }
 std::string icnt::get_internal_size() const
 {
-    return fmt::format("name in_req out_req in_resp out_resp\n{} {} {} {} {}",
-                       "icnt[0] ",
-                       in_reqs[0].size(),
-                       out_reqs[0].size(),
-                       in_resps[0].size(),
-                       out_resps[0].size());
+
+    std::string ret;
+    for (auto i = 0u; i < n_cores; i++)
+    {
+        ret += fmt::format("name id in_req out_req \n{}-{} {} {}\n",
+                           "icnt", i,
+                           in_reqs[i].size(),
+                           out_resps[i].size());
+    }
+    for (auto i = 0u; i < n_mems; i++)
+    {
+        ret += fmt::format("name id in_resp out_resp \n{}-{} {} {}\n",
+                           "icnt", i,
+                           in_resps[i].size(),
+                           out_reqs[i].size());
+    }
+    ret += fmt::format("\ncurrent_inflight: {}\n", current_inflight_pkg.size());
+    if (icnt_busy())
+    {
+        ret += "\n ICNT BUSY!!\n";
+    }
+    return ret;
 }
 
 std::string icnt::get_line_trace() const
@@ -38,6 +65,8 @@ std::string icnt::get_line_trace() const
 
 bool icnt::do_cycle()
 {
+    icnt_transfer();
+
     bool busy = false;
     //from in requst to icnt
     for (auto &&[i, q] : enumerate(in_reqs))
@@ -45,6 +74,7 @@ bool icnt::do_cycle()
         if (!q.empty())
         {
             auto &req = q.front();
+            assert(req);
             //q.pop_front();
             auto source = req->ComponentId;
             if (source >= n_cores)
@@ -59,7 +89,8 @@ bool icnt::do_cycle()
             if (is_has_buffer)
             {
                 busy = true;
-                auto dest = get_mem_id(req);
+                auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
+                auto dest = mem_partition_id + n_cores;
                 push_into_inct(source, dest, std::move(req));
                 q.pop_front();
             }
@@ -73,20 +104,22 @@ bool icnt::do_cycle()
         if (!q.empty())
         {
             auto &req = q.front();
-            auto resp = get_mem_id(req);
+            auto resp = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
             assert(i == resp);
             auto size = get_pkg_size(resp, 0, req);
             if (has_buffer(resp, size))
             {
                 busy = true;
                 auto dest = req->ComponentId;
-                if (dest > n_cores)
+                //fix bug here, this is >= not >!!!
+                if (dest >= n_cores)
                 {
                     dest = dest - n_cores;
                     auto c_to_w = n_clauses / n_cores;
                     dest = dest / c_to_w;
                 }
-                push_into_inct(resp, dest, std::move(req));
+                auto source = resp + n_cores;
+                push_into_inct(source, dest, std::move(req));
                 q.pop_front();
             }
         }
@@ -96,6 +129,7 @@ bool icnt::do_cycle()
     {
         if (auto req_p = (cache_interface_req *)icnt_pop(i))
         {
+            BOOST_LOG_TRIVIAL(debug) << fmt::format("ICNT OUT: FROM PORT {}", i);
             busy = true;
             assert(current_inflight_pkg.count(req_p) == 1);
             current_inflight_pkg.erase(req_p);
@@ -107,6 +141,7 @@ bool icnt::do_cycle()
     {
         if (auto req_p = (cache_interface_req *)icnt_pop(n_cores + i))
         {
+            BOOST_LOG_TRIVIAL(debug) << fmt::format("ICNT OUT: FROM PORT {}", n_cores + i);
             busy = true;
             assert(current_inflight_pkg.count(req_p) == 1);
             current_inflight_pkg.erase(req_p);
@@ -166,6 +201,7 @@ bool icnt::has_buffer(unsigned source, unsigned size) const
 {
     return icnt_has_buffer(source, size);
 }
+
 void icnt::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
 {
 
@@ -187,39 +223,4 @@ void icnt::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_
     assert(icnt_has_buffer(source, size));
     current_inflight_pkg.insert(req.get());
     icnt_push(source, dest, (void *)req.release(), size); //give the ownership
-}
-unsigned icnt::get_mem_id(const icnt::req_ptr &req) const
-{
-    auto as = req->as;
-    auto addr = 0ull;
-    auto watcher_id = req->watcherId;
-    auto clause_id = req->clauseId;
-    switch (req->type)
-    {
-    case ReadType::ReadWatcher:
-        addr = as->get_addr();
-        addr += watcher_id * 8;
-        /* code */
-        break;
-    case ReadType::WatcherReadValue:
-        addr = as->get_block_addr(watcher_id);
-        break;
-    case ReadType::ReadClauseData:
-        addr = as->get_clause_addr(watcher_id);
-        break;
-    case ReadType::ReadClauseValue:
-        addr = as->get_clause_detail(watcher_id)[clause_id];
-        break;
-    case ReadType::writeClause:
-        addr = as->get_clause_addr(watcher_id);
-        break;
-    case ReadType::writeWatcherList:
-        addr = as->get_pushed_watcher_list_tail_addr(watcher_id);
-        break;
-    default:
-        throw std::runtime_error("no such type");
-        break;
-    }
-    auto dest = (addr >> 5) % n_mems;
-    return (unsigned)dest;
 }

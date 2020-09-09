@@ -348,6 +348,7 @@ void acc::add_hook_from_clause_write_unit_to_cache()
 
                 busy = true;
                 auto &req = m_clause_write_unit->out.front();
+                assert(req->ComponentId >= num_watchers);
                 auto source = (req->ComponentId - num_watchers) / (num_clauses / num_watchers);
                 m_icnt->in_reqs[source].push_back(std::move(req));
 
@@ -386,29 +387,52 @@ void acc::add_hook_from_icnt_to_other()
         auto busy = false;
         for (auto &&[i, watcher_unit] : enumerate(watchers))
         {
-            if (auto req_p = (cache_interface_req *)icnt_pop(i))
+            if (!m_icnt->out_resps[i].empty() and watcher_unit->recieve_mem_rdy())
             {
                 busy = true;
-                auto req = std::unique_ptr<cache_interface_req>(req_p); //get the owner;
+                auto &req = m_icnt->out_resps[i].front(); //get the owner;
                 if (req->ComponentId < num_watchers)
                 {
-                    watcher_unit->in_memory_resp_queue.push_back(std::move(req));
+                    //bug here
+                    //need to send to private cache if it's value accesss
+                    if (req->type == ReadType::WatcherReadValue)
+                    {
+                        m_private_caches[i]->in_resp.push_back(std::move(req));
+                    }
+                    else
+                    {
+                        assert(req->type == ReadType::ReadWatcher);
+                        watcher_unit->in_memory_resp_queue.push_back(std::move(req));
+                    }
                 }
                 else
                 {
-                    assert(req->ComponentId >= num_watchers && req->ComponentId < num_watchers + num_clauses);
-                    auto clause_id = (req->ComponentId - num_watchers) / (num_clauses / num_watchers);
-                    clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
+                    //it's clause access
+                    if (req->type == ReadType::ReadClauseValue)
+                    {
+                        m_private_caches[i]->in_resp.push_back(std::move(req));
+                    }
+                    else
+                    {
+                        assert(req->type == ReadType::ReadClauseData);
+                        assert(req->ComponentId >= num_watchers && req->ComponentId < num_watchers + num_clauses);
+                        auto clause_id = (req->ComponentId - num_watchers);
+                        assert(clause_id / (num_clauses / num_watchers) == i);
+
+                        clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
+                    }
                 }
+                m_icnt->out_resps[i].pop_front();
             }
         }
         for (auto i = 0u; i < 8; i++)
         {
-            if (auto req_p = (cache_interface_req *)icnt_pop(i + num_watchers))
+            if (!m_icnt->out_reqs[i].empty() and m_cache_interface->recieve_rdy(i))
             {
+                auto &req = m_icnt->out_reqs[i].front();
                 busy = true;
-                auto req = std::unique_ptr<cache_interface_req>(req_p);
                 m_cache_interface->in_request_queues[i].push_back(std::move(req));
+                m_icnt->out_reqs[i].pop_front();
             }
         }
         return busy;

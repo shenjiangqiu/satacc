@@ -14,10 +14,17 @@ TEST_CASE("acc", "[advanced][core][componet]")
         auto as = generate_wrap();
         auto req = std::make_unique<cache_interface_req>(ReadType::ReadWatcher, 0, 0, 0, as);
         m_acc.in_m_trail.push_back(std::move(req));
+        bool print = false;
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;
             m_acc.cycle();
+            std::cout << m_acc.current_cycle << std::endl;
+
+            if (print)
+            {
+                std::cout << m_acc.get_internal_size();
+            }
             m_acc.current_cycle++;
         }
         std::cout << "m_acc current cycle " << m_acc.current_cycle << std::endl;

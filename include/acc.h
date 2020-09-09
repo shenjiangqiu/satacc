@@ -78,7 +78,7 @@ public:
     }
     bool empty() const override
     {
-        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto c) { return c->empty(); });
+        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
     }
     std::deque<req_ptr> in_m_trail;
 

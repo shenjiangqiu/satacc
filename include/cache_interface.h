@@ -243,13 +243,13 @@ public:
         std::string ret;
         for (auto i = 0u; i < N; i++)
         {
-            ret += fmt::format("name delay in out \n {} {} {} {}",
+            ret += fmt::format("name delay in out \n {} {} {} {}\n",
                                "cache_interface:",
                                delay_resp_queues[i].size(),
                                in_request_queues[i].size(),
                                out_resp_queues[i].size());
         }
-        return ret + fmt::format("name addr_to_req missq dram_r  \n {} {} {} {}",
+        return ret + fmt::format("name addr_to_req missq dram_r  \n {} {} {} {}\n",
                                  "cache_interface:",
                                  addr_to_req.size(),
                                  miss_queue.size(),
@@ -278,7 +278,7 @@ public:
                     uint64_t &t) : componet(t),
                                    m_caches(N,
                                             sjq::cache(cache_set_assositive,
-                                                       cache_num_sets,
+                                                       cache_num_sets / N,
                                                        sjq::cache::lru,
                                                        cache_mshr_entries,
                                                        cache_mshr_maxmerge,

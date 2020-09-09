@@ -52,7 +52,7 @@ public:
                addr_to_req.empty();
     }
     std::deque<req_ptr> in_request;
-    std::deque<req_ptr> out_send_q;
+    std::deque<req_ptr> out_send_q;//to watcher
     std::deque<req_ptr> out_miss_queue;
     std::deque<req_ptr> in_resp;
 

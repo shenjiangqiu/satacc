@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
-project(SatAcc VERSION 0.0.1)
+project(SatAcc VERSION 0.0.2)
 find_package(Boost REQUIRED COMPONENTS log  program_options log log_setup)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -DBOOST_LOG_DYN_LINK")
@@ -18,7 +17,5 @@ target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt::fmt-header-only
 sjqcache dramsim3 minisat_utiles mem_req_interface sjqutils)
 target_link_libraries(satacc PUBLIC intersim2)
 
-aux_source_directory(test TESTSOURCES)
-add_executable(main_test ${TESTSOURCES})
-target_link_libraries(main_test PUBLIC satacc)
-
+add_subdirectory(test)
+add_subdirectory(simple_test)

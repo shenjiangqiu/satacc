@@ -111,17 +111,29 @@ auto generate_wrap_para()
 {
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
-    new_wrap1->add_pushed_list(0, 10);
-    new_wrap1->add_pushed_list(1, 20);
-    new_wrap1->add_pushed_list(2, 10);
-    new_wrap1->add_pushed_list(3, 10);
-    new_wrap1->add_pushed_list(4, 10);
-    new_wrap1->add_pushed_list(5, 10);
-    new_wrap1->add_pushed_list(6, 10);
-    new_wrap1->add_pushed_list(7, 10);
-    new_wrap1->add_pushed_list(8, 10);
-    new_wrap1->add_pushed_list(9, 10);
 
+    new_wrap1->add_pushed_list(0, 10);
+    new_wrap1->add_pushed_addr(0, 100110);
+    new_wrap1->add_pushed_list(1, 20);
+    new_wrap1->add_pushed_addr(1, 100120);
+    new_wrap1->add_pushed_list(2, 10);
+    new_wrap1->add_pushed_addr(2, 100110);
+    new_wrap1->add_pushed_list(3, 10);
+    new_wrap1->add_pushed_addr(3, 100110);
+    new_wrap1->add_pushed_list(4, 10);
+    new_wrap1->add_pushed_addr(4, 100110);
+    new_wrap1->add_pushed_list(5, 10);
+    new_wrap1->add_pushed_addr(5, 100110);
+    new_wrap1->add_pushed_list(6, 10);
+    new_wrap1->add_pushed_addr(6, 100110);
+    new_wrap1->add_pushed_list(7, 10);
+    new_wrap1->add_pushed_addr(7, 100110);
+    new_wrap1->add_pushed_list(8, 10);
+    new_wrap1->add_pushed_addr(8, 100110);
+    new_wrap1->add_pushed_list(9, 10);
+    new_wrap1->add_pushed_addr(9, 100190);
+
+    
     for (int i = 0; i < 32; i++)
     {
         new_wrap1->add_block_addr(i, 200 + i);
