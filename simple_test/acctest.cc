@@ -5,6 +5,7 @@
 
 int main()
 {
+    int a = 1 / 0;
     uint64_t current_cycle = 0;
     auto m_acc = acc(4, 4, current_cycle);
     m_acc.current_cycle = 0;
