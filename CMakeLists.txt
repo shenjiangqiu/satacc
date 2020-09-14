@@ -10,7 +10,8 @@ aux_source_directory(src SOURCES)
 
 add_library(satacc STATIC ${SOURCES})
 target_include_directories(satacc PUBLIC  
-                    "${CMAKE_CURRENT_SOURCE_DIR}/include"  
+                    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                    ${Boost_INCLUDE_DIRS}   
                      )
 
 target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt::fmt-header-only 
