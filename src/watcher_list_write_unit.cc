@@ -22,7 +22,7 @@ bool watcher_list_write_unit::do_cycle()
         in_request.pop_front();
         auto as = req->as;
         auto watcherId = req->watcherId;
-        req->type = ReadType::writeWatcherList;
+        req->type = AccessType::writeWatcherList;
         unsigned watcehrSize = as->get_watcher_size();
         assert(watcehrSize != 0);
         if (watcehrSize == 1)

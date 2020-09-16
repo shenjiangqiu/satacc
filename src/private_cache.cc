@@ -26,13 +26,13 @@ bool private_cache::from_in_to_out()
         uint64_t addr = 0;
         switch (req->type)
         {
-        case ReadType::WatcherReadValue:
+        case AccessType::WatcherReadValue:
             /* code */
             assert(as->get_watcher_size() != 0);
             addr = as->get_block_addr(watcherId);
 
             break;
-        case ReadType::ReadClauseValue:
+        case AccessType::ReadClauseValue:
             addr = as->get_clause_detail(watcherId)[clauseId];
             cache_type = 1;
             break;
@@ -94,13 +94,13 @@ bool private_cache::from_resp_to_send()
         uint64_t addr = 0;
         switch (req->type)
         {
-        case ReadType::WatcherReadValue:
+        case AccessType::WatcherReadValue:
             /* code */
             assert(as->get_watcher_size() != 0);
             addr = as->get_block_addr(watcherId);
 
             break;
-        case ReadType::ReadClauseValue:
+        case AccessType::ReadClauseValue:
             addr = as->get_clause_detail(watcherId)[clauseId];
             //cache_type = 1;
             break;

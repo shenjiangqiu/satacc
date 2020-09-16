@@ -160,8 +160,8 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
     //auto as = req->as;
     switch (type)
     {
-    case ReadType::ReadClauseData:
-    case ReadType::ReadWatcher:
+    case AccessType::ReadClauseData:
+    case AccessType::ReadWatcher:
         if (source < dest)
         {
             size = 12;
@@ -173,8 +173,8 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
 
         /* code */
         break;
-    case ReadType::ReadClauseValue:
-    case ReadType::WatcherReadValue:
+    case AccessType::ReadClauseValue:
+    case AccessType::WatcherReadValue:
         if (source < dest)
         {
             size = 12;
@@ -185,8 +185,8 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
         }
         /* code */
         break;
-    case ReadType::writeClause:
-    case ReadType::writeWatcherList:
+    case AccessType::writeClause:
+    case AccessType::writeWatcherList:
         size = 12;
         break;
     default:

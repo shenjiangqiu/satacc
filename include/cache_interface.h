@@ -66,7 +66,7 @@ private:
 
                 switch (type)
                 {
-                case ReadType::ReadClauseData:
+                case AccessType::ReadClauseData:
                     /* code */
 
                     addr = as->get_clause_addr(watcherId);
@@ -74,22 +74,22 @@ private:
                     cache_type = 1;
 
                     break;
-                case ReadType::ReadClauseValue:
+                case AccessType::ReadClauseValue:
                     addr = as->get_clause_detail(watcherId)[clauseId];
                     cache_type = 1;
                     break;
-                case ReadType::ReadWatcher:
+                case AccessType::ReadWatcher:
                     assert(as != nullptr);
                     addr = as->get_addr();
                     addr += 4 * watcherId;
                     break;
-                case ReadType::WatcherReadValue:
+                case AccessType::WatcherReadValue:
                     assert(as->get_watcher_size() != 0);
                     addr = as->get_block_addr(watcherId);
 
                     break;
-                case ReadType::writeClause:
-                case ReadType::writeWatcherList:
+                case AccessType::writeClause:
+                case AccessType::writeWatcherList:
                     in_request_queue.pop_front();
 
                     //just drop it, and return immediately
@@ -217,7 +217,7 @@ private:
     {
         dram_resp_queue.push_back(addr);
     }
-    std::array<uint64_t, (int)ReadType::max> access_hist = {0};
+    std::array<uint64_t, (int)AccessType::max> access_hist = {0};
 
     /* data */
 public:

@@ -29,7 +29,7 @@ bool clause::task_to_data_waiting() //get the task and send to data waiting queu
         busy = true;
         //FIXME should be error here
         clause_data_read_waiting_queue.push_back(std::move(in_task_queue.front()));
-        clause_data_read_waiting_queue.back()->type = ReadType::ReadClauseData;
+        clause_data_read_waiting_queue.back()->type = AccessType::ReadClauseData;
         clause_data_read_waiting_queue.back()->clauseId = 0;
         in_task_queue.pop_front();
     }
@@ -50,7 +50,7 @@ bool clause::data_waiting_to_mem_out() // get from data_waiting queue, and get c
         //auto copy = std::unique_ptr<cache_interface_req>(new cache_interface_req(*clause_data_read_waiting_queue.front()));
         auto copy = copy_unit_ptr(clause_data_read_waiting_queue.front());
         out_memory_read_queue.push_back(std::move(copy));
-        out_memory_read_queue.back()->type = ReadType::ReadClauseData;
+        out_memory_read_queue.back()->type = AccessType::ReadClauseData;
         clauseId += 16;
         if (clauseId >= total_clause_size)
         {
@@ -72,7 +72,7 @@ bool clause::value_waiting_to_mem_out() // get from value_waiting, and get value
         auto &clauseId = req->clauseId;
 
         out_memory_read_queue.push_back(copy_unit_ptr(req));
-        out_memory_read_queue.back()->type = ReadType::ReadClauseValue;
+        out_memory_read_queue.back()->type = AccessType::ReadClauseValue;
         clauseId += 1;
 
         if (clauseId >= total_clasue_size)
@@ -93,7 +93,7 @@ bool clause::mem_in_to_comp() //to value_waiting and process waiting
         auto clauseId = req->clauseId;
         auto ass = req->as;
         auto total_clause_size = ass->get_clause_literal(watcherId).size();
-        if (type == ReadType::ReadClauseData and
+        if (type == AccessType::ReadClauseData and
             clause_value_read_waiting_queue.size() < data_size)
         {
             busy = true;
@@ -102,7 +102,7 @@ bool clause::mem_in_to_comp() //to value_waiting and process waiting
             {
                 //the last one
                 auto &new_req = req;
-                new_req->type = ReadType::ReadClauseValue;
+                new_req->type = AccessType::ReadClauseValue;
                 new_req->clauseId = 0;
                 clause_value_read_waiting_queue.push_back(std::move(new_req));
             }
@@ -151,7 +151,7 @@ bool clause::process_waiting_to_out() //process the clause and send out
                 assert(new_req->as != nullptr);
                 new_req->watcherId = 0;
                 new_req->clauseId = 0;
-                new_req->type = ReadType::ReadWatcher;
+                new_req->type = AccessType::ReadWatcher;
                 assert(new_req);
 
                 out_queue.push_back(std::move(new_req));

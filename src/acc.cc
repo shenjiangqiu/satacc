@@ -49,7 +49,7 @@ void acc::add_hook_from_watcher_out_actions()
             //send the memory request to cache interfase //it's direct to l3 cache
             if (!watchers[watcher_id]->out_memory_read_queue.empty())
             {
-                if (watchers[watcher_id]->out_memory_read_queue.front()->type == ReadType::ReadWatcher)
+                if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcher)
                 {
                     auto source = watcher_id;
                     if (::icnt_has_buffer(source, 64))
@@ -58,7 +58,7 @@ void acc::add_hook_from_watcher_out_actions()
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
                         auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-                        assert(req->type == ReadType::ReadWatcher);
+                        assert(req->type == AccessType::ReadWatcher);
                         //error here
                         //m_cache_interface->in_request_queue.push_back(std::move(req));
                         //m_cache_interface->in_request_queue.back()->ComponentId = watcher_id;
@@ -72,14 +72,14 @@ void acc::add_hook_from_watcher_out_actions()
                 //send private cache to cache//to private cache!!
                 else
                 {
-                    assert(watchers[watcher_id]->out_memory_read_queue.front()->type == ReadType::WatcherReadValue);
+                    assert(watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::WatcherReadValue);
                     if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_private_caches[watcher_id]->recieve_rdy())
                     {
                         busy = true;
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
                         auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-                        assert(req->type == ReadType::WatcherReadValue);
+                        assert(req->type == AccessType::WatcherReadValue);
 
                         m_private_caches[watcher_id]->in_request.push_back(std::move(req));
                         m_private_caches[watcher_id]->in_request.back()->ComponentId = watcher_id;
@@ -116,7 +116,7 @@ void acc::add_hook_from_clause_to_mem()
                 bool busy = false;
                 if (!clauses[clauseId]->out_memory_read_queue.empty())
                 {
-                    if (clauses[clauseId]->out_memory_read_queue.front()->type == ReadType::ReadClauseData)
+                    if (clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseData)
                     {
                         auto source = clauseId / (n_c / n_w);
                         if (icnt_has_buffer(source, 16))
@@ -132,7 +132,7 @@ void acc::add_hook_from_clause_to_mem()
                     else
                     {
                         //push value request to private cache
-                        assert(clauses[clauseId]->out_memory_read_queue.front()->type == ReadType::ReadClauseValue);
+                        assert(clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseValue);
                         auto watcherId = clauseId / (num_clauses / num_watchers);
                         if (m_private_caches[watcherId]->recieve_rdy())
                         {
@@ -171,7 +171,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
 
                     int clause_id = component_id - num_watchers;
 
-                    if (req->type == ReadType::ReadClauseData)
+                    if (req->type == AccessType::ReadClauseData)
                     { //send to cleause
 
                         if (clauses[clause_id]->recieve_mem_rdy())
@@ -186,7 +186,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                     {
                         //send to private cache
 
-                        assert(m_cache_interface->out_resp_queue.front()->type == ReadType::ReadClauseValue);
+                        assert(m_cache_interface->out_resp_queue.front()->type == AccessType::ReadClauseValue);
                         int watcherId = clause_id / (num_clauses / num_watchers);
                         m_private_caches[watcherId]->in_resp.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                         m_cache_interface->out_resp_queue.pop_front();
@@ -196,7 +196,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                 {
                     //the case it's a watcher request
                     int watcher_id = component_id;
-                    if (m_cache_interface->out_resp_queue.front()->type == ReadType::ReadWatcher)
+                    if (m_cache_interface->out_resp_queue.front()->type == AccessType::ReadWatcher)
                     {
                         //it's a watcher data request , send to watcher
                         if (watchers[watcher_id]->recieve_mem_rdy())
@@ -208,7 +208,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                     }
                     else
                     {
-                        assert(m_cache_interface->out_resp_queue.front()->type == ReadType::WatcherReadValue);
+                        assert(m_cache_interface->out_resp_queue.front()->type == AccessType::WatcherReadValue);
                         //int watcherId = clause_id / (num_clauses / num_watchers);
                         m_private_caches[watcher_id]->in_resp.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                         m_cache_interface->out_resp_queue.pop_front();
@@ -232,7 +232,7 @@ void acc::add_hook_from_private_cache()
             {
                 busy = true;
                 auto &req = m_private_caches[watcherId]->out_send_q.front();
-                if (req->type == ReadType::ReadClauseValue)
+                if (req->type == AccessType::ReadClauseValue)
                 {
                     assert(req->ComponentId >= num_watchers);
                     auto clauseId = req->ComponentId - num_watchers;
@@ -243,7 +243,7 @@ void acc::add_hook_from_private_cache()
                 }
                 else
                 {
-                    assert(req->type == ReadType::WatcherReadValue);
+                    assert(req->type == AccessType::WatcherReadValue);
                     assert(req->ComponentId == watcherId);
                     //std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
                     watchers[watcherId]->in_memory_resp_queue.push_back(std::move(req));
@@ -395,26 +395,26 @@ void acc::add_hook_from_icnt_to_other()
                 {
                     //bug here
                     //need to send to private cache if it's value accesss
-                    if (req->type == ReadType::WatcherReadValue)
+                    if (req->type == AccessType::WatcherReadValue)
                     {
                         m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
                     else
                     {
-                        assert(req->type == ReadType::ReadWatcher);
+                        assert(req->type == AccessType::ReadWatcher);
                         watcher_unit->in_memory_resp_queue.push_back(std::move(req));
                     }
                 }
                 else
                 {
                     //it's clause access
-                    if (req->type == ReadType::ReadClauseValue)
+                    if (req->type == AccessType::ReadClauseValue)
                     {
                         m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
                     else
                     {
-                        assert(req->type == ReadType::ReadClauseData);
+                        assert(req->type == AccessType::ReadClauseData);
                         assert(req->ComponentId >= num_watchers && req->ComponentId < num_watchers + num_clauses);
                         auto clause_id = (req->ComponentId - num_watchers);
                         assert(clause_id / (num_clauses / num_watchers) == i);

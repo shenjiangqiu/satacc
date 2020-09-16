@@ -14,7 +14,7 @@ TEST_CASE("intersim", "[base],[component],[core]")
     //int argc;
     //char *argv[10];
     //Minisat::parseOptions(argc, argv);
-    cache_interface_req req1(ReadType::ReadClauseData, 0, 0, 0, nullptr);
+    cache_interface_req req1(AccessType::ReadClauseData, 0, 0, 0, nullptr);
     icnt_push(0, 5, (void *)&req1, 8);
     auto ret = icnt_pop(5);
     unsigned c = 0;
