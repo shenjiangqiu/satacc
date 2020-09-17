@@ -32,7 +32,7 @@ bool watcher::from_value_to_out_mem()
 
         //FIXME
         out_memory_read_queue.push_back(copy_unit_ptr(waiting_value_watcher_queue.front()));
-        out_memory_read_queue.back()->type = AccessType::WatcherReadValue;
+        out_memory_read_queue.back()->type = AccessType::ReadWatcherValue;
 
         current_size += 1;
         if (current_size >= total_size)
@@ -104,7 +104,7 @@ bool watcher::from_read_watcher_to_mem()
 
             //FIXME
             out_memory_read_queue.push_back(copy_unit_ptr(waiting_read_watcher_queue.front()));
-            out_memory_read_queue.back()->type = AccessType::ReadWatcher;
+            out_memory_read_queue.back()->type = AccessType::ReadWatcherData;
             current_size += 16;
             if (current_size >= total_size) //in case the total size is 0
             {
@@ -141,7 +141,7 @@ bool watcher::from_resp_to_insider()
         auto &index = in_memory_resp_queue.front()->watcherId;
         auto &as = in_memory_resp_queue.front()->as;
         //into waiting_value_watcher_queue
-        if (type == AccessType::ReadWatcher and waiting_value_watcher_queue.size() < value_size)
+        if (type == AccessType::ReadWatcherData and waiting_value_watcher_queue.size() < value_size)
         {
             if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
@@ -153,7 +153,7 @@ bool watcher::from_resp_to_insider()
             in_memory_resp_queue.pop_front();
         }
         //into waiting_process_queue
-        else if (type == AccessType::WatcherReadValue and waiting_process_queue.size() < process_size)
+        else if (type == AccessType::ReadWatcherValue and waiting_process_queue.size() < process_size)
         {
             if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {

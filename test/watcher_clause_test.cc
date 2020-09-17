@@ -33,7 +33,7 @@ TEST_CASE("WatcherClause", "[advanced][core][componet]")
     new_wrap1->add_detail(10, 12);
     new_wrap1->add_detail(10, 13);
 
-    auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, new_wrap1);
+    auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, new_wrap1);
 
     w.in_task_queue.push_back(std::move(req1));
     while (w.out_send_queue.size() == 0)
@@ -72,5 +72,5 @@ TEST_CASE("WatcherClause", "[advanced][core][componet]")
             c.out_memory_read_queue.pop_front();
         }
     }
-    assert(*c.out_queue.front() == cache_interface_req(AccessType::ReadWatcher, 0, 0, 0, new_wrap2));
+    assert(*c.out_queue.front() == cache_interface_req(AccessType::ReadWatcherData, 0, 0, 0, new_wrap2));
 }

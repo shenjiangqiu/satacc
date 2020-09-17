@@ -151,7 +151,7 @@ bool clause::process_waiting_to_out() //process the clause and send out
                 assert(new_req->as != nullptr);
                 new_req->watcherId = 0;
                 new_req->clauseId = 0;
-                new_req->type = AccessType::ReadWatcher;
+                new_req->type = AccessType::ReadWatcherData;
                 assert(new_req);
 
                 out_queue.push_back(std::move(new_req));

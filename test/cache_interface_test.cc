@@ -62,7 +62,7 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
         m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queues[0].empty())
         {
@@ -73,7 +73,7 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
         m_c.out_resp_queues[0].pop_front();
         std::cout << "current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 16, 0, 0, new_wrap1));
         std::cout << "current cycle:" << current_cycle << std::endl;
         while (m_c.out_resp_queues[0].empty())
         {
@@ -87,8 +87,8 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
         //bank burst test
         std::cout << " burst current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, new_wrap1));
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 16, 0, 0, new_wrap1));
 
         REQUIRE(m_c.out_resp_queues[0].empty() == true);
         while (m_c.out_resp_queues[0].empty())
@@ -114,8 +114,8 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
         current_cycle = 0;
         std::cout << " burst current cycle:" << current_cycle << std::endl;
 
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, new_wrap1));
-        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 16, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, new_wrap1));
+        m_c.in_request_queues[0].push_back(std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 16, 0, 0, new_wrap1));
 
         REQUIRE(m_c.out_resp_queues[0].empty() == true);
         while (m_c.out_resp_queues[0].empty())

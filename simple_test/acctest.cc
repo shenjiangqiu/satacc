@@ -5,13 +5,13 @@
 
 int main()
 {
-    int a = 1 / 0;
+    //int a = 1 / 0;
     uint64_t current_cycle = 0;
     auto m_acc = acc(4, 4, current_cycle);
     m_acc.current_cycle = 0;
 
     auto as = generate_wrap();
-    auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, as);
+    auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as);
     m_acc.in_m_trail.push_back(std::move(req));
     bool print = false;
     while (!m_acc.empty())

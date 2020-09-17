@@ -161,7 +161,7 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
     switch (type)
     {
     case AccessType::ReadClauseData:
-    case AccessType::ReadWatcher:
+    case AccessType::ReadWatcherData:
         if (source < dest)
         {
             size = 12;
@@ -174,7 +174,7 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
         /* code */
         break;
     case AccessType::ReadClauseValue:
-    case AccessType::WatcherReadValue:
+    case AccessType::ReadWatcherValue:
         if (source < dest)
         {
             size = 12;

@@ -33,9 +33,9 @@ TEST_CASE("Clause", "[basic][core][componet]")
     new_wrap1->add_detail(10, 12);
     new_wrap1->add_detail(10, 13);
 
-    auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, new_wrap1);
+    auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, new_wrap1);
 
-    auto req2 = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 10, 0, 0, new_wrap1);
+    auto req2 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 10, 0, 0, new_wrap1);
 
     c.in_task_queue.push_back(std::move(req1));
     c.in_task_queue.push_back(std::move(req2));

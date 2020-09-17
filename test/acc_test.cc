@@ -12,7 +12,7 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("long")
     {
         auto as = generate_wrap();
-        auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, as);
+        auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as);
         m_acc.in_m_trail.push_back(std::move(req));
         bool print = false;
         while (!m_acc.empty())
@@ -34,7 +34,7 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("short")
     {
         auto as = generate_wrap_short();
-        auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, as);
+        auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as);
         m_acc.in_m_trail.push_back(std::move(req));
         while (!m_acc.empty())
         {
@@ -49,8 +49,8 @@ TEST_CASE("acc", "[advanced][core][componet]")
     SECTION("parallel")
     {
         auto as = generate_wrap_para();
-        auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, as.first);
-        auto req2 = std::make_unique<cache_interface_req>(AccessType::ReadWatcher, 0, 0, 0, as.second);
+        auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as.first);
+        auto req2 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as.second);
 
         m_acc.in_m_trail.push_back(std::move(req1));
         m_acc.in_m_trail.push_back(std::move(req2));

@@ -22,11 +22,11 @@ bool private_cache::from_in_to_out()
         auto as = req->as;
         auto watcherId = req->watcherId;
         auto clauseId = req->clauseId;
-        int cache_type = 0;
+        sjq::cache::access_type cache_type = sjq::cache::read;
         uint64_t addr = 0;
         switch (req->type)
         {
-        case AccessType::WatcherReadValue:
+        case AccessType::ReadWatcherValue:
             /* code */
             assert(as->get_watcher_size() != 0);
             addr = as->get_block_addr(watcherId);
@@ -34,7 +34,7 @@ bool private_cache::from_in_to_out()
             break;
         case AccessType::ReadClauseValue:
             addr = as->get_clause_detail(watcherId)[clauseId];
-            cache_type = 1;
+            //cache_type = 1;
             break;
         default:
             throw;
@@ -94,7 +94,7 @@ bool private_cache::from_resp_to_send()
         uint64_t addr = 0;
         switch (req->type)
         {
-        case AccessType::WatcherReadValue:
+        case AccessType::ReadWatcherValue:
             /* code */
             assert(as->get_watcher_size() != 0);
             addr = as->get_block_addr(watcherId);

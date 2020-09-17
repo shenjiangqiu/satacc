@@ -49,7 +49,7 @@ void acc::add_hook_from_watcher_out_actions()
             //send the memory request to cache interfase //it's direct to l3 cache
             if (!watchers[watcher_id]->out_memory_read_queue.empty())
             {
-                if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcher)
+                if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherData)
                 {
                     auto source = watcher_id;
                     if (::icnt_has_buffer(source, 64))
@@ -58,7 +58,7 @@ void acc::add_hook_from_watcher_out_actions()
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
                         auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-                        assert(req->type == AccessType::ReadWatcher);
+                        assert(req->type == AccessType::ReadWatcherData);
                         //error here
                         //m_cache_interface->in_request_queue.push_back(std::move(req));
                         //m_cache_interface->in_request_queue.back()->ComponentId = watcher_id;
@@ -72,14 +72,14 @@ void acc::add_hook_from_watcher_out_actions()
                 //send private cache to cache//to private cache!!
                 else
                 {
-                    assert(watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::WatcherReadValue);
+                    assert(watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherValue);
                     if (!watchers[watcher_id]->out_memory_read_queue.empty() and m_private_caches[watcher_id]->recieve_rdy())
                     {
                         busy = true;
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
                         auto &req = watchers[watcher_id]->out_memory_read_queue.front();
 
-                        assert(req->type == AccessType::WatcherReadValue);
+                        assert(req->type == AccessType::ReadWatcherValue);
 
                         m_private_caches[watcher_id]->in_request.push_back(std::move(req));
                         m_private_caches[watcher_id]->in_request.back()->ComponentId = watcher_id;
@@ -196,7 +196,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                 {
                     //the case it's a watcher request
                     int watcher_id = component_id;
-                    if (m_cache_interface->out_resp_queue.front()->type == AccessType::ReadWatcher)
+                    if (m_cache_interface->out_resp_queue.front()->type == AccessType::ReadWatcherData)
                     {
                         //it's a watcher data request , send to watcher
                         if (watchers[watcher_id]->recieve_mem_rdy())
@@ -208,7 +208,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                     }
                     else
                     {
-                        assert(m_cache_interface->out_resp_queue.front()->type == AccessType::WatcherReadValue);
+                        assert(m_cache_interface->out_resp_queue.front()->type == AccessType::ReadWatcherValue);
                         //int watcherId = clause_id / (num_clauses / num_watchers);
                         m_private_caches[watcher_id]->in_resp.push_back(std::move(m_cache_interface->out_resp_queue.front()));
                         m_cache_interface->out_resp_queue.pop_front();
@@ -243,7 +243,7 @@ void acc::add_hook_from_private_cache()
                 }
                 else
                 {
-                    assert(req->type == AccessType::WatcherReadValue);
+                    assert(req->type == AccessType::ReadWatcherValue);
                     assert(req->ComponentId == watcherId);
                     //std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
                     watchers[watcherId]->in_memory_resp_queue.push_back(std::move(req));
@@ -395,13 +395,13 @@ void acc::add_hook_from_icnt_to_other()
                 {
                     //bug here
                     //need to send to private cache if it's value accesss
-                    if (req->type == AccessType::WatcherReadValue)
+                    if (req->type == AccessType::ReadWatcherValue)
                     {
                         m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
                     else
                     {
-                        assert(req->type == AccessType::ReadWatcher);
+                        assert(req->type == AccessType::ReadWatcherData);
                         watcher_unit->in_memory_resp_queue.push_back(std::move(req));
                     }
                 }
