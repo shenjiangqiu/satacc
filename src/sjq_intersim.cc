@@ -107,7 +107,9 @@ bool icnt::do_cycle()
             auto resp = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
             assert(i == resp);
             auto size = get_pkg_size(resp, 0, req);
-            if (has_buffer(resp, size))
+            auto source = resp + n_cores;
+            //fix bug here, should test source not the dst
+            if (has_buffer(source, size))
             {
                 busy = true;
                 auto dest = req->ComponentId;
@@ -118,7 +120,6 @@ bool icnt::do_cycle()
                     auto c_to_w = n_clauses / n_cores;
                     dest = dest / c_to_w;
                 }
-                auto source = resp + n_cores;
                 push_into_inct(source, dest, std::move(req));
                 q.pop_front();
             }
