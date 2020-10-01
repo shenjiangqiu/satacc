@@ -320,7 +320,7 @@ public:
                     fmt::format("the_hist {}\n", access_hist));
         }
 
-        ret += fmt::format("\n read_watcher_data_hit {}\nread_watcher_value_hit {}\nread_clause_data_hit {}\nread_clause_value_hit {}\nwrite_watcher_list_hit {}\nwrite_clause_hit {}\nread_watcher_data_miss {}\nread_watcher_value_miss {}\nread_clause_data_miss {}\nread_clause_value_miss {}\nwrite_watcher_list_miss {}\nwrite_clause_miss {}\n",
+        ret += fmt::format("\nread_watcher_data_hit {}\nread_watcher_value_hit {}\nread_clause_data_hit {}\nread_clause_value_hit {}\nwrite_watcher_list_hit {}\nwrite_clause_hit {}\nread_watcher_data_miss {}\nread_watcher_value_miss {}\nread_clause_data_miss {}\nread_clause_value_miss {}\nwrite_watcher_list_miss {}\nwrite_clause_miss {}\n",
                            m_stats.read_watcher_data_hit,
                            m_stats.read_watcher_value_hit,
                            m_stats.read_clause_data_hit,

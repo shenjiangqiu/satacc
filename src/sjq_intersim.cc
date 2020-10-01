@@ -25,7 +25,12 @@ icnt::icnt(uint64_t &current_cycle,
                               out_resps(num_cores)
 {
     //init icnt config
-
+    static bool already_init = false;
+    if (already_init)
+    {
+        throw;
+    }
+    already_init = true;
     global_init init;    //copy option config into the config variable
     icnt_wrapper_init(); //create the wrapper, setup this functions
     icnt_create(num_cores, num_mem);
