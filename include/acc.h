@@ -18,6 +18,7 @@
 #include "watcher_list_write_unit.h"
 #include "clause_writer.h"
 #include <sjq_intersim.h>
+#include <new_intersim_wrapper.h>
 class acc : public componet
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
@@ -38,7 +39,12 @@ private:
     cache_interface *m_cache_interface;
     watcher_list_write_unit *m_watcher_write_unit;
     clause_writer *m_clause_write_unit;
-    icnt *m_icnt;
+    //icnt *m_icnt;
+    new_icnt *m_icnt;
+
+    //important
+    //all the componets are owned by m_componnets
+    //
 
     void init_watcher_and_clause();
     void add_hook_from_watcher_out_actions();
@@ -78,6 +84,7 @@ public:
     }
     bool empty() const override
     {
+
         return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
     }
     std::deque<req_ptr> in_m_trail;

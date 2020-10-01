@@ -1,8 +1,10 @@
 #include "acc.h"
 #include <mem_req_interface.h>
-#include <icnt_wrapper.h>
+
 #include <req_addr.h>
 #include <addr_utiles.h>
+#include <new_intersim_wrapper.h>
+#include <memreq_info.h>
 void acc::init_watcher_and_clause()
 {
     //init the components
@@ -52,7 +54,7 @@ void acc::add_hook_from_watcher_out_actions()
                 if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherData)
                 {
                     auto source = watcher_id;
-                    if (::icnt_has_buffer(source, 64))
+                    if (m_icnt->has_buffer(MEM_L1, source))
                     {
                         busy = true;
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
@@ -92,7 +94,7 @@ void acc::add_hook_from_watcher_out_actions()
             if (!m_private_caches[watcher_id]->out_miss_queue.empty())
             {
                 auto &req = m_private_caches[watcher_id]->out_miss_queue.front();
-                if (icnt_has_buffer(watcher_id, 64))
+                if (m_icnt->has_buffer(MEM_L1, watcher_id))
                 {
                     busy = true;
                     m_icnt->in_reqs[watcher_id].push_back(std::move(req));
@@ -119,7 +121,7 @@ void acc::add_hook_from_clause_to_mem()
                     if (clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseData)
                     {
                         auto source = clauseId / (n_c / n_w);
-                        if (icnt_has_buffer(source, 16))
+                        if (m_icnt->has_buffer(MEM_L1, source))
                         {
                             busy = true;
                             assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
@@ -152,6 +154,7 @@ void acc::add_hook_from_clause_to_mem()
 }
 void acc::add_hook_from_cache_to_clause_and_watchers()
 {
+    
 
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
@@ -455,13 +458,15 @@ acc::acc(unsigned t_num_watchers,
 {
     //TODO too large in this fuction!!
     // add the componets s
+    m_icnt = new new_icnt(tcurrent_cycle,
+                          t_num_watchers, 8, t_num_clauses, 3, 1, 0, 64, 3);
     m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);
     m_componets.push_back(m_watcher_write_unit);
     m_componets.push_back(m_clause_write_unit);
-    m_icnt = new icnt(tcurrent_cycle, t_num_watchers, 8, t_num_clauses);
+    //m_icnt = new icnt(tcurrent_cycle, t_num_watchers, 8, t_num_clauses);
     m_componets.push_back(m_icnt);
 
     init_watcher_and_clause();
