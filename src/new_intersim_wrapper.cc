@@ -177,8 +177,8 @@ unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned , unsigned , const std
     //auto as = req->as;
     switch (type)
     {
-    case ReadType::ReadClauseData:
-    case ReadType::ReadWatcher:
+    case AccessType::ReadClauseData:
+    case AccessType::ReadWatcherData:
         if (cpu_to_mem)
         {
             size = 12;
@@ -190,8 +190,8 @@ unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned , unsigned , const std
 
         /* code */
         break;
-    case ReadType::ReadClauseValue:
-    case ReadType::WatcherReadValue:
+    case AccessType::ReadClauseValue:
+    case AccessType::ReadWatcherValue:
         if (cpu_to_mem)
         {
             size = 12;
@@ -202,8 +202,8 @@ unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned , unsigned , const std
         }
         /* code */
         break;
-    case ReadType::writeClause:
-    case ReadType::writeWatcherList:
+    case AccessType::writeClause:
+    case AccessType::writeWatcherList:
         size = 12;
         break;
     default:
