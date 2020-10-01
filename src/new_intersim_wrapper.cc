@@ -1,10 +1,13 @@
-#include <sjq_intersim.h>
+#include <new_intersim_wrapper.h>
 #include <enumerate.h>
 #include <boost/log/trivial.hpp>
 #include <exception>
 #include <req_addr.h>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
+#include <network.h>
+#include <ring.h>
+#include <memreq_info.h>
 
 namespace logging = boost::log;
 void init_log()
@@ -12,32 +15,36 @@ void init_log()
     logging::core::get()->set_filter(
         logging::trivial::severity >= logging::trivial::error);
 }
-icnt::icnt(uint64_t &current_cycle,
-           int num_cores,
-           int num_mem,
-           int num_clauses) : componet(current_cycle),
-                              n_cores(num_cores),
-                              n_mems(num_mem),
-                              n_clauses(num_clauses),
-                              in_reqs(num_cores),
-                              out_reqs(num_mem),
-                              in_resps(num_mem),
-                              out_resps(num_cores)
+new_icnt::new_icnt(uint64_t &current_cycle,
+                   int num_cores,
+                   int num_mem,
+                   int num_clauses,
+                   int num_vc,
+                   int link_latency,
+                   int arbitration_policy,
+                   int link_width,
+                   int num_vc_cpu) : componet(current_cycle),
+                                     m_ring_network(current_cycle,
+                                                    num_vc, link_latency,
+                                                    arbitration_policy,
+                                                    link_width,
+                                                    num_vc_cpu),
+                                     n_cores(num_cores),
+                                     n_mems(num_mem),
+                                     n_clauses(num_clauses),
+                                     in_reqs(num_cores),
+                                     out_reqs(num_mem),
+                                     in_resps(num_mem),
+                                     out_resps(num_cores)
 {
     //init icnt config
-    static bool already_init = false;
-    if (already_init)
-    {
-        throw;
-    }
-    already_init = true;
-    global_init init;    //copy option config into the config variable
-    icnt_wrapper_init(); //create the wrapper, setup this functions
-    icnt_create(num_cores, num_mem);
-    icnt_init();
-    init_log();
+    m_ring_network.init(num_cores, 0, num_mem, 0, 0);
 }
-std::string icnt::get_internal_size() const
+bool new_icnt::has_pkg_in_icnt() const
+{
+    return !current_inflight_pkg.empty();
+}
+std::string new_icnt::get_internal_size() const
 {
 
     std::string ret;
@@ -56,21 +63,21 @@ std::string icnt::get_internal_size() const
                            out_reqs[i].size());
     }
     ret += fmt::format("\ncurrent_inflight: {}\n", current_inflight_pkg.size());
-    if (icnt_busy())
+    if (!current_inflight_pkg.empty())
     {
         ret += "\n ICNT BUSY!!\n";
     }
     return ret;
 }
 
-std::string icnt::get_line_trace() const
+std::string new_icnt::get_line_trace() const
 {
     return fmt::format("name busy_percent\n{} {}", "icnt", get_busy_percent());
 }
 
-bool icnt::do_cycle()
+bool new_icnt::do_cycle()
 {
-    icnt_transfer();
+    m_ring_network.run_a_cycle(false);
 
     bool busy = false;
     //from in requst to icnt
@@ -89,14 +96,16 @@ bool icnt::do_cycle()
                 source = (source - n_cores) / c_to_w;
             }
 
-            auto size = get_pkg_size(source, n_cores + 1, req);
-            auto is_has_buffer = has_buffer(source, size);
+            auto size = get_pkg_size(true, source, n_cores + 1, req);
+            req->m_size = size;
+            auto is_has_buffer = has_buffer(MEM_L1, source);
+
             if (is_has_buffer)
             {
                 busy = true;
                 auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
-                auto dest = mem_partition_id + n_cores;
-                push_into_inct(source, dest, std::move(req));
+                //auto dest = mem_partition_id;
+                push_into_inct(true, source, mem_partition_id, std::move(req));
                 q.pop_front();
             }
         }
@@ -111,10 +120,9 @@ bool icnt::do_cycle()
             auto &req = q.front();
             auto resp = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
             assert(i == resp);
-            auto size = get_pkg_size(resp, 0, req);
-            auto source = resp + n_cores;
-            //fix bug here, should test source not the dst
-            if (has_buffer(source, size))
+            auto size = get_pkg_size(false, resp, 0, req);
+            req->m_size = size;
+            if (has_buffer(MEM_L3, resp))
             {
                 busy = true;
                 auto dest = req->ComponentId;
@@ -125,7 +133,8 @@ bool icnt::do_cycle()
                     auto c_to_w = n_clauses / n_cores;
                     dest = dest / c_to_w;
                 }
-                push_into_inct(source, dest, std::move(req));
+                //auto source = resp + n_cores;
+                push_into_inct(false, resp, dest, std::move(req));
                 q.pop_front();
             }
         }
@@ -133,8 +142,9 @@ bool icnt::do_cycle()
 
     for (auto i = 0u; i < n_cores; i++)
     {
-        if (auto req_p = (cache_interface_req *)icnt_pop(i))
+        if (auto req_p = m_ring_network.receive(MEM_L1, i))
         {
+            m_ring_network.receive_pop(MEM_L1, i);
             BOOST_LOG_TRIVIAL(debug) << fmt::format("ICNT OUT: FROM PORT {}", i);
             busy = true;
             assert(current_inflight_pkg.count(req_p) == 1);
@@ -145,8 +155,9 @@ bool icnt::do_cycle()
 
     for (auto i = 0u; i < n_mems; i++)
     {
-        if (auto req_p = (cache_interface_req *)icnt_pop(n_cores + i))
+        if (auto req_p = m_ring_network.receive(MEM_L3, i))
         {
+            m_ring_network.receive_pop(MEM_L3, i);
             BOOST_LOG_TRIVIAL(debug) << fmt::format("ICNT OUT: FROM PORT {}", n_cores + i);
             busy = true;
             assert(current_inflight_pkg.count(req_p) == 1);
@@ -158,7 +169,7 @@ bool icnt::do_cycle()
     return busy;
 }
 
-unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_ptr<cache_interface_req> &req) const
+unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned , unsigned , const std::unique_ptr<cache_interface_req> &req) const
 {
     //push to icnt:
     auto size = 0;
@@ -166,9 +177,9 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
     //auto as = req->as;
     switch (type)
     {
-    case AccessType::ReadClauseData:
-    case AccessType::ReadWatcherData:
-        if (source < dest)
+    case ReadType::ReadClauseData:
+    case ReadType::ReadWatcher:
+        if (cpu_to_mem)
         {
             size = 12;
         }
@@ -179,9 +190,9 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
 
         /* code */
         break;
-    case AccessType::ReadClauseValue:
-    case AccessType::ReadWatcherValue:
-        if (source < dest)
+    case ReadType::ReadClauseValue:
+    case ReadType::WatcherReadValue:
+        if (cpu_to_mem)
         {
             size = 12;
         }
@@ -191,8 +202,8 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
         }
         /* code */
         break;
-    case AccessType::writeClause:
-    case AccessType::writeWatcherList:
+    case ReadType::writeClause:
+    case ReadType::writeWatcherList:
         size = 12;
         break;
     default:
@@ -203,18 +214,21 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
     return size;
 }
 
-bool icnt::has_buffer(unsigned source, unsigned size) const
+bool new_icnt::has_buffer(int level, unsigned source) const
 {
-    return icnt_has_buffer(source, size);
+    return m_ring_network.has_buffer(level, source);
 }
 
-void icnt::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
+void new_icnt::push_into_inct(bool cpu_to_mem, unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
 {
 
     
-    auto size = get_pkg_size(source, dest, req);
+    auto size = get_pkg_size(cpu_to_mem, source, dest, req);
+    auto srclevel = cpu_to_mem ? MEM_L1 : MEM_L3;
+    auto dstlevel = cpu_to_mem ? MEM_L3 : MEM_L1;
+    req->m_size = size;
 
-    assert(icnt_has_buffer(source, size));
     current_inflight_pkg.insert(req.get());
-    icnt_push(source, dest, (void *)req.release(), size); //give the ownership
+    //icnt_push(source, dest, (void *)req.release(), size); //give the ownership
+    m_ring_network.send(req.release(), srclevel, source, dstlevel, dest);
 }
