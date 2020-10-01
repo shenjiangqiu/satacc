@@ -15,7 +15,7 @@ target_include_directories(satacc PUBLIC
 
 target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt::fmt-header-only 
 sjqcache dramsim3 minisat_utiles mem_req_interface sjqutils)
-target_link_libraries(satacc PUBLIC intersim2)
+target_link_libraries(satacc PUBLIC intersim2 new_intersim)
 
 add_subdirectory(test)
 add_subdirectory(simple_test)
