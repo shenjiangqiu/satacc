@@ -7,11 +7,6 @@
 #include <boost/log/expressions.hpp>
 
 namespace logging = boost::log;
-void init_log()
-{
-    logging::core::get()->set_filter(
-        logging::trivial::severity >= logging::trivial::error);
-}
 icnt::icnt(uint64_t &current_cycle,
            int num_cores,
            int num_mem,
@@ -35,7 +30,8 @@ icnt::icnt(uint64_t &current_cycle,
     icnt_wrapper_init(); //create the wrapper, setup this functions
     icnt_create(num_cores, num_mem);
     icnt_init();
-    init_log();
+    logging::core::get()->set_filter(
+        logging::trivial::severity >= logging::trivial::error);
 }
 std::string icnt::get_internal_size() const
 {
@@ -211,7 +207,6 @@ bool icnt::has_buffer(unsigned source, unsigned size) const
 void icnt::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
 {
 
-    
     auto size = get_pkg_size(source, dest, req);
 
     assert(icnt_has_buffer(source, size));

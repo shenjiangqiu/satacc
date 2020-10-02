@@ -10,11 +10,6 @@
 #include <memreq_info.h>
 
 namespace logging = boost::log;
-void init_log()
-{
-    logging::core::get()->set_filter(
-        logging::trivial::severity >= logging::trivial::error);
-}
 new_icnt::new_icnt(uint64_t &current_cycle,
                    int num_cores,
                    int num_mem,
@@ -39,6 +34,8 @@ new_icnt::new_icnt(uint64_t &current_cycle,
 {
     //init icnt config
     m_ring_network.init(num_cores, 0, num_mem, 0, 0);
+    logging::core::get()->set_filter(
+        logging::trivial::severity >= logging::trivial::error);
 }
 bool new_icnt::has_pkg_in_icnt() const
 {
@@ -169,7 +166,7 @@ bool new_icnt::do_cycle()
     return busy;
 }
 
-unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned , unsigned , const std::unique_ptr<cache_interface_req> &req) const
+unsigned new_icnt::get_pkg_size(bool cpu_to_mem, unsigned, unsigned, const std::unique_ptr<cache_interface_req> &req) const
 {
     //push to icnt:
     auto size = 0;
@@ -222,7 +219,6 @@ bool new_icnt::has_buffer(int level, unsigned source) const
 void new_icnt::push_into_inct(bool cpu_to_mem, unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
 {
 
-    
     auto size = get_pkg_size(cpu_to_mem, source, dest, req);
     auto srclevel = cpu_to_mem ? MEM_L1 : MEM_L3;
     auto dstlevel = cpu_to_mem ? MEM_L3 : MEM_L1;
