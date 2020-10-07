@@ -54,7 +54,7 @@ void acc::add_hook_from_watcher_out_actions()
                 if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherData)
                 {
                     auto source = watcher_id;
-                    if (m_icnt->has_buffer(MEM_L1, source))
+                    if (m_icnt->has_buffer(MEM_L2, source))
                     {
                         busy = true;
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
@@ -66,6 +66,11 @@ void acc::add_hook_from_watcher_out_actions()
                         //m_cache_interface->in_request_queue.back()->ComponentId = watcher_id;
                         //now push to icnt
                         req->ComponentId = watcher_id;
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "from watcher to icnt" << std::endl;
+                        std::cout << *req << std::endl;
+
+#endif
                         m_icnt->in_reqs[source].push_back(std::move(req));
 
                         watchers[watcher_id]->out_memory_read_queue.pop_front();
@@ -80,11 +85,14 @@ void acc::add_hook_from_watcher_out_actions()
                         busy = true;
                         assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
                         auto &req = watchers[watcher_id]->out_memory_read_queue.front();
-
+                        req->ComponentId = watcher_id;
                         assert(req->type == AccessType::ReadWatcherValue);
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "from watcher to private cache" << std::endl;
+                        std::cout << *req << std::endl;
 
+#endif
                         m_private_caches[watcher_id]->in_request.push_back(std::move(req));
-                        m_private_caches[watcher_id]->in_request.back()->ComponentId = watcher_id;
 
                         watchers[watcher_id]->out_memory_read_queue.pop_front();
                     }
@@ -94,9 +102,15 @@ void acc::add_hook_from_watcher_out_actions()
             if (!m_private_caches[watcher_id]->out_miss_queue.empty())
             {
                 auto &req = m_private_caches[watcher_id]->out_miss_queue.front();
-                if (m_icnt->has_buffer(MEM_L1, watcher_id))
+                if (m_icnt->has_buffer(MEM_L2, watcher_id))
                 {
                     busy = true;
+                    //req->ComponentId = watcher_id;
+#ifdef SJQ_ICNT_DEBUG
+                    std::cout << "from private cache to icnt" << std::endl;
+                    std::cout << *req << std::endl;
+
+#endif
                     m_icnt->in_reqs[watcher_id].push_back(std::move(req));
                     m_private_caches[watcher_id]->out_miss_queue.pop_front();
                 }
@@ -121,12 +135,17 @@ void acc::add_hook_from_clause_to_mem()
                     if (clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseData)
                     {
                         auto source = clauseId / (n_c / n_w);
-                        if (m_icnt->has_buffer(MEM_L1, source))
+                        if (m_icnt->has_buffer(MEM_L2, source))
                         {
                             busy = true;
                             assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
                             auto &req = clauses[clauseId]->out_memory_read_queue.front();
                             req->ComponentId = clauseId + num_watchers;
+#ifdef SJQ_ICNT_DEBUG
+                            std::cout << "from clause to icnt" << std::endl;
+                            std::cout << *req << std::endl;
+
+#endif
                             m_icnt->in_reqs[source].push_back(std::move(req));
                             clauses[clauseId]->out_memory_read_queue.pop_front();
                         }
@@ -134,14 +153,20 @@ void acc::add_hook_from_clause_to_mem()
                     else
                     {
                         //push value request to private cache
-                        assert(clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseValue);
+                        auto &req = clauses[clauseId]->out_memory_read_queue.front();
+                        assert(req->type == AccessType::ReadClauseValue);
                         auto watcherId = clauseId / (num_clauses / num_watchers);
                         if (m_private_caches[watcherId]->recieve_rdy())
                         {
                             busy = true;
-                            assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
+                            assert(req->as != nullptr);
+                            req->ComponentId = clauseId + num_watchers;
+#ifdef SJQ_ICNT_DEBUG
+                            std::cout << "from clause to private cache" << std::endl;
+                            std::cout << *req << std::endl;
+
+#endif
                             m_private_caches[watcherId]->in_request.push_back(std::move(clauses[clauseId]->out_memory_read_queue.front()));
-                            m_private_caches[watcherId]->in_request.back()->ComponentId = clauseId + num_watchers;
 
                             clauses[clauseId]->out_memory_read_queue.pop_front();
                         }
@@ -154,7 +179,6 @@ void acc::add_hook_from_clause_to_mem()
 }
 void acc::add_hook_from_cache_to_clause_and_watchers()
 {
-    
 
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
@@ -390,8 +414,10 @@ void acc::add_hook_from_icnt_to_other()
         auto busy = false;
         for (auto &&[i, watcher_unit] : enumerate(watchers))
         {
+            //this for loop: for each watcher unit
             if (!m_icnt->out_resps[i].empty() and watcher_unit->recieve_mem_rdy())
             {
+                //this if: this is from icnt to watchers or clauses or private cache
                 busy = true;
                 auto &req = m_icnt->out_resps[i].front(); //get the owner;
                 if (req->ComponentId < num_watchers)
@@ -401,11 +427,17 @@ void acc::add_hook_from_icnt_to_other()
                     if (req->type == AccessType::ReadWatcherValue)
                     {
                         m_private_caches[i]->in_resp.push_back(std::move(req));
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "req out from icnt to private cache,it's read watcher value " << i << std::endl;
+#endif
                     }
                     else
                     {
                         assert(req->type == AccessType::ReadWatcherData);
                         watcher_unit->in_memory_resp_queue.push_back(std::move(req));
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "req out from icnt to watcher unit,it's read watcher data " << i << std::endl;
+#endif
                     }
                 }
                 else
@@ -413,6 +445,9 @@ void acc::add_hook_from_icnt_to_other()
                     //it's clause access
                     if (req->type == AccessType::ReadClauseValue)
                     {
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "req out from icnt to clause unit,it's read clause value " << i << std::endl;
+#endif
                         m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
                     else
@@ -423,6 +458,11 @@ void acc::add_hook_from_icnt_to_other()
                         assert(clause_id / (num_clauses / num_watchers) == i);
 
                         clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
+
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "req out from icnt to clause unit,it's read clause data " << i << std::endl;
+                        std::cout << "clause id is: " << clause_id << std::endl;
+#endif
                     }
                 }
                 m_icnt->out_resps[i].pop_front();
@@ -435,6 +475,9 @@ void acc::add_hook_from_icnt_to_other()
                 auto &req = m_icnt->out_reqs[i].front();
                 busy = true;
                 m_cache_interface->in_request_queues[i].push_back(std::move(req));
+#ifdef SJQ_ICNT_DEBUG
+                std::cout << "req out from icnt into cache interface " << i << std::endl;
+#endif
                 m_icnt->out_reqs[i].pop_front();
             }
         }
@@ -456,7 +499,7 @@ acc::acc(unsigned t_num_watchers,
                                      num_clauses(t_num_clauses)
 
 {
-    //TODO too large in this fuction!!
+
     // add the componets s
     m_icnt = new new_icnt(tcurrent_cycle,
                           t_num_watchers, 8, t_num_clauses, 3, 1, 0, 64, 3);

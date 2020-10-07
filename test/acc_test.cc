@@ -19,7 +19,7 @@ TEST_CASE("acc", "[advanced][core][componet]")
         {
             //std::cout << m_acc.get_internal_size() << std::endl;
             m_acc.cycle();
-            std::cout << m_acc.current_cycle << std::endl;
+            //std::cout << m_acc.current_cycle << std::endl;
 
             if (print)
             {

@@ -1,7 +1,5 @@
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} TESTSOURCES)
 add_executable(main_test ${TESTSOURCES})
-target_link_libraries(main_test PUBLIC satacc)
+target_link_libraries(main_test PUBLIC satacc generate_wrap)
 
-add_library(generate_wrap INTERFACE)
-target_include_directories(generate_wrap INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

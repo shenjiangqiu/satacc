@@ -1,8 +1,7 @@
-#ifndef SET_UP_H
-#define SET_UP_H
 
 #include "assign_wrap.h"
-auto generate_wrap()
+#include <set_up.h>
+assign_wrap* generate_wrap()
 {
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
@@ -55,7 +54,7 @@ auto generate_wrap()
 
     return new_wrap1;
 }
-auto generate_wrap_short()
+assign_wrap* generate_wrap_short()
 {
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
@@ -107,7 +106,7 @@ auto generate_wrap_short()
 
     return new_wrap1;
 }
-auto generate_wrap_para()
+std::pair<assign_wrap *, assign_wrap *> generate_wrap_para()
 {
     assign_wrap_factory af;
     auto new_wrap1 = af.create(10, 32, -1, nullptr, 0);
@@ -133,7 +132,6 @@ auto generate_wrap_para()
     new_wrap1->add_pushed_list(9, 10);
     new_wrap1->add_pushed_addr(9, 100190);
 
-    
     for (int i = 0; i < 32; i++)
     {
         new_wrap1->add_block_addr(i, 200 + i);
@@ -192,5 +190,3 @@ auto generate_wrap_para()
 
     return std::make_pair(new_wrap1, new_wrap4);
 }
-
-#endif

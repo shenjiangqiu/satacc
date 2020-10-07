@@ -92,10 +92,11 @@ bool new_icnt::do_cycle()
                 int c_to_w = n_clauses / n_cores;
                 source = (source - n_cores) / c_to_w;
             }
+            assert(source == i);
 
             auto size = get_pkg_size(true, source, n_cores + 1, req);
             req->m_size = size;
-            auto is_has_buffer = has_buffer(MEM_L1, source);
+            auto is_has_buffer = has_buffer(MEM_L2, source);
 
             if (is_has_buffer)
             {
@@ -115,11 +116,10 @@ bool new_icnt::do_cycle()
         if (!q.empty())
         {
             auto &req = q.front();
-            auto resp = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
-            assert(i == resp);
-            auto size = get_pkg_size(false, resp, 0, req);
+            assert(i == get_partition_id_by_addr(get_addr_by_req(req), n_mems));
+            auto size = get_pkg_size(false, i, 0, req);
             req->m_size = size;
-            if (has_buffer(MEM_L3, resp))
+            if (has_buffer(MEM_L3, i))
             {
                 busy = true;
                 auto dest = req->ComponentId;
@@ -131,7 +131,7 @@ bool new_icnt::do_cycle()
                     dest = dest / c_to_w;
                 }
                 //auto source = resp + n_cores;
-                push_into_inct(false, resp, dest, std::move(req));
+                push_into_inct(false, i, dest, std::move(req));
                 q.pop_front();
             }
         }
@@ -139,9 +139,9 @@ bool new_icnt::do_cycle()
 
     for (auto i = 0u; i < n_cores; i++)
     {
-        if (auto req_p = m_ring_network.receive(MEM_L1, i))
+        if (auto req_p = m_ring_network.receive(MEM_L2, i))
         {
-            m_ring_network.receive_pop(MEM_L1, i);
+            m_ring_network.receive_pop(MEM_L2, i);
             BOOST_LOG_TRIVIAL(debug) << fmt::format("ICNT OUT: FROM PORT {}", i);
             busy = true;
             assert(current_inflight_pkg.count(req_p) == 1);
@@ -220,8 +220,8 @@ void new_icnt::push_into_inct(bool cpu_to_mem, unsigned source, unsigned dest, s
 {
 
     auto size = get_pkg_size(cpu_to_mem, source, dest, req);
-    auto srclevel = cpu_to_mem ? MEM_L1 : MEM_L3;
-    auto dstlevel = cpu_to_mem ? MEM_L3 : MEM_L1;
+    auto srclevel = cpu_to_mem ? MEM_L2 : MEM_L3;
+    auto dstlevel = cpu_to_mem ? MEM_L3 : MEM_L2;
     req->m_size = size;
 
     current_inflight_pkg.insert(req.get());
