@@ -57,7 +57,7 @@ TEST_CASE("acc", "[advanced][core][componet]")
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;
-            m_acc.cycle();
+            REQUIRE_NOTHROW(m_acc.cycle());
             m_acc.current_cycle++;
         }
         std::cout << "m_acc current cycle " << m_acc.current_cycle << std::endl;

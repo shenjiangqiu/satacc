@@ -67,7 +67,7 @@ void acc::add_hook_from_watcher_out_actions()
                         //now push to icnt
                         req->ComponentId = watcher_id;
 #ifdef SJQ_ICNT_DEBUG
-                        std::cout << "from watcher to icnt" << std::endl;
+                        std::cout << "from watcher to icnt: " << i << std::endl;
                         std::cout << *req << std::endl;
 
 #endif
@@ -88,7 +88,7 @@ void acc::add_hook_from_watcher_out_actions()
                         req->ComponentId = watcher_id;
                         assert(req->type == AccessType::ReadWatcherValue);
 #ifdef SJQ_ICNT_DEBUG
-                        std::cout << "from watcher to private cache" << std::endl;
+                        std::cout << "from watcher to private cache: " << i << std::endl;
                         std::cout << *req << std::endl;
 
 #endif
@@ -107,7 +107,7 @@ void acc::add_hook_from_watcher_out_actions()
                     busy = true;
                     //req->ComponentId = watcher_id;
 #ifdef SJQ_ICNT_DEBUG
-                    std::cout << "from private cache to icnt" << std::endl;
+                    std::cout << "from private cache to icnt: " << i << std::endl;
                     std::cout << *req << std::endl;
 
 #endif
@@ -142,7 +142,8 @@ void acc::add_hook_from_clause_to_mem()
                             auto &req = clauses[clauseId]->out_memory_read_queue.front();
                             req->ComponentId = clauseId + num_watchers;
 #ifdef SJQ_ICNT_DEBUG
-                            std::cout << "from clause to icnt" << std::endl;
+                            std::cout << fmt::format("from clause to icnt:{} {}", clauseId, source) << std::endl;
+                            //std::cout << "from clause to icnt: " << i << std::endl;
                             std::cout << *req << std::endl;
 
 #endif
@@ -162,7 +163,9 @@ void acc::add_hook_from_clause_to_mem()
                             assert(req->as != nullptr);
                             req->ComponentId = clauseId + num_watchers;
 #ifdef SJQ_ICNT_DEBUG
-                            std::cout << "from clause to private cache" << std::endl;
+                            //std::cout << "from clause to private cache" << std::endl;
+                            std::cout << fmt::format("from clause to private cache:{} {}", clauseId, watcherId) << std::endl;
+
                             std::cout << *req << std::endl;
 
 #endif
@@ -264,7 +267,10 @@ void acc::add_hook_from_private_cache()
                     assert(req->ComponentId >= num_watchers);
                     auto clauseId = req->ComponentId - num_watchers;
                     assert(clauseId / (num_clauses / num_watchers) == watcherId);
-
+#ifdef SJQ_ICNT_DEBUG
+                    std::cout << fmt::format("from private cache {} to clause {}", i, clauseId) << std::endl;
+                    std::cout << *req << std::endl;
+#endif
                     clauses[clauseId]->in_memory_resp_queue.push_back(std::move(req));
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 }
@@ -272,7 +278,11 @@ void acc::add_hook_from_private_cache()
                 {
                     assert(req->type == AccessType::ReadWatcherValue);
                     assert(req->ComponentId == watcherId);
-                    //std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
+//std::cout << "watcher:" << watcherId << "push response from private cache" << std::endl;
+#ifdef SJQ_ICNT_DEBUG
+                    std::cout << fmt::format("from private cache {} to watcher {}", i, watcherId) << std::endl;
+                    std::cout << *req << std::endl;
+#endif
                     watchers[watcherId]->in_memory_resp_queue.push_back(std::move(req));
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 }
@@ -426,18 +436,20 @@ void acc::add_hook_from_icnt_to_other()
                     //need to send to private cache if it's value accesss
                     if (req->type == AccessType::ReadWatcherValue)
                     {
-                        m_private_caches[i]->in_resp.push_back(std::move(req));
 #ifdef SJQ_ICNT_DEBUG
-                        std::cout << "req out from icnt to private cache,it's read watcher value " << i << std::endl;
+                        std::cout << "req out from icnt to private cache,it's read watcher value: " << i << std::endl;
+                        std::cout << *req << std::endl;
 #endif
+                        m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
                     else
                     {
-                        assert(req->type == AccessType::ReadWatcherData);
-                        watcher_unit->in_memory_resp_queue.push_back(std::move(req));
 #ifdef SJQ_ICNT_DEBUG
                         std::cout << "req out from icnt to watcher unit,it's read watcher data " << i << std::endl;
+                        std::cout << *req << std::endl;
 #endif
+                        assert(req->type == AccessType::ReadWatcherData);
+                        watcher_unit->in_memory_resp_queue.push_back(std::move(req));
                     }
                 }
                 else
@@ -447,6 +459,7 @@ void acc::add_hook_from_icnt_to_other()
                     {
 #ifdef SJQ_ICNT_DEBUG
                         std::cout << "req out from icnt to clause unit,it's read clause value " << i << std::endl;
+                        std::cout << *req << std::endl;
 #endif
                         m_private_caches[i]->in_resp.push_back(std::move(req));
                     }
@@ -456,13 +469,12 @@ void acc::add_hook_from_icnt_to_other()
                         assert(req->ComponentId >= num_watchers && req->ComponentId < num_watchers + num_clauses);
                         auto clause_id = (req->ComponentId - num_watchers);
                         assert(clause_id / (num_clauses / num_watchers) == i);
-
-                        clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
-
 #ifdef SJQ_ICNT_DEBUG
                         std::cout << "req out from icnt to clause unit,it's read clause data " << i << std::endl;
-                        std::cout << "clause id is: " << clause_id << std::endl;
+                        std::cout << *req << std::endl;
+
 #endif
+                        clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
                     }
                 }
                 m_icnt->out_resps[i].pop_front();
@@ -474,10 +486,12 @@ void acc::add_hook_from_icnt_to_other()
             {
                 auto &req = m_icnt->out_reqs[i].front();
                 busy = true;
-                m_cache_interface->in_request_queues[i].push_back(std::move(req));
 #ifdef SJQ_ICNT_DEBUG
                 std::cout << "req out from icnt into cache interface " << i << std::endl;
+                std::cout << *req << std::endl;
 #endif
+                m_cache_interface->in_request_queues[i].push_back(std::move(req));
+
                 m_icnt->out_reqs[i].pop_front();
             }
         }
