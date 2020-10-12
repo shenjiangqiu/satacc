@@ -40,7 +40,7 @@ private:
     watcher_list_write_unit *m_watcher_write_unit;
     clause_writer *m_clause_write_unit;
     //icnt *m_icnt;
-    new_icnt *m_icnt;
+    icnt_mesh *m_icnt;
 
     //important
     //all the componets are owned by m_componnets

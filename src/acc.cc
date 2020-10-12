@@ -515,7 +515,7 @@ acc::acc(unsigned t_num_watchers,
 {
 
     // add the componets s
-    m_icnt = new new_icnt(tcurrent_cycle,
+    m_icnt = new icnt_mesh(tcurrent_cycle,
                           t_num_watchers, 8, t_num_clauses, 3, 1, 0, 64, 3);
     m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
     m_componets.push_back(m_cache_interface);

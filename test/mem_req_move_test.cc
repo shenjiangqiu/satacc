@@ -28,7 +28,7 @@ TEST_CASE("mem_req_test")
 TEST_CASE("mem_req_icnt")
 {
     uint64_t tcurrent_cycle = 0;
-    auto m_icnt = new new_icnt(tcurrent_cycle,
+    auto m_icnt = new icnt_ring(tcurrent_cycle,
                                16, 8, 16, 3, 1, 0, 64, 3);
     global_id = 0;
     auto as1 = new assign_wrap(0, 10, 0, nullptr, 0);
@@ -49,7 +49,7 @@ TEST_CASE("mem_req_icnt")
         {
             if (!m_icnt->out_reqs[i].empty())
             {
-                auto &req = m_icnt->out_reqs[i].front();
+                //auto &req = m_icnt->out_reqs[i].front();
                 std::cout << "req out from " << i << std::endl;
                 num_inflight--;
                 m_icnt->out_reqs[i].pop_front();
