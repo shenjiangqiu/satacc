@@ -14,6 +14,7 @@
 #include <mem_req_interface.h>
 #include <addr_utiles.h>
 #include <enumerate.h>
+#define NUM_PARTITIONS 1
 //use template to avoid expesive divide calculate
 class cache_stats
 {
@@ -68,8 +69,8 @@ class cache_interface : public componet
 
 private:
     cache_stats m_stats;
-    unsigned num_partition = 8;
-    unsigned N = 8;
+    unsigned num_partition = NUM_PARTITIONS;
+    unsigned N = NUM_PARTITIONS;
     unsigned cache_delay = 2;
     unsigned delay_q_size = 64;
     unsigned miss_size = 64;

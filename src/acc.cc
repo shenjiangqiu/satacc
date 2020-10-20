@@ -14,7 +14,7 @@ void acc::init_watcher_and_clause()
         watchers.push_back(new_watcher);
         m_componets.push_back(new_watcher);
 
-        auto m_private_cache = new private_cache(8, private_cache_size, current_cycle);
+        auto m_private_cache = new private_cache(NUM_PARTITIONS, private_cache_size, current_cycle);
         m_componets.push_back(m_private_cache);
         m_private_caches.push_back(m_private_cache);
     }
@@ -186,7 +186,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
         bool busy = false;
-        for (auto i = 0u; i < 8u; i++)
+        for (auto i = 0u; i < NUM_PARTITIONS; i++)
         {
             if (!m_cache_interface->out_resp_queues[i].empty())
             {
@@ -480,7 +480,7 @@ void acc::add_hook_from_icnt_to_other()
                 m_icnt->out_resps[i].pop_front();
             }
         }
-        for (auto i = 0u; i < 8; i++)
+        for (auto i = 0u; i < NUM_PARTITIONS; i++)
         {
             if (!m_icnt->out_reqs[i].empty() and m_cache_interface->recieve_rdy(i))
             {
@@ -516,14 +516,14 @@ acc::acc(unsigned t_num_watchers,
 
     // add the componets s
     m_icnt = new icnt_mesh(tcurrent_cycle,
-                          t_num_watchers, 8, t_num_clauses, 3, 1, 0, 64, 3);
+                          t_num_watchers, NUM_PARTITIONS, t_num_clauses, 3, 1, 0, 64, 3);
     m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);
     m_componets.push_back(m_watcher_write_unit);
     m_componets.push_back(m_clause_write_unit);
-    //m_icnt = new icnt(tcurrent_cycle, t_num_watchers, 8, t_num_clauses);
+    //m_icnt = new icnt(tcurrent_cycle, t_num_watchers, NUM_PARTITIONS, t_num_clauses);
     m_componets.push_back(m_icnt);
 
     init_watcher_and_clause();
