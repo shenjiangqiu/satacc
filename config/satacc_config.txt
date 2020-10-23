@@ -1,2 +1,3 @@
 icnt=ideal
 mems=8
+seq=true
