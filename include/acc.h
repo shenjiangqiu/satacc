@@ -19,6 +19,10 @@
 #include "clause_writer.h"
 #include <sjq_intersim.h>
 #include <new_intersim_wrapper.h>
+namespace sjq
+{
+    extern bool inside_busy;
+}
 class acc : public componet
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
@@ -43,7 +47,7 @@ private:
     clause_writer *m_clause_write_unit;
     //icnt *m_icnt;
     icnt_base *m_icnt;
-
+    bool enable_sequential = false;
     //important
     //all the componets are owned by m_componnets
     //

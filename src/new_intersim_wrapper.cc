@@ -485,8 +485,10 @@ bool icnt_ideal::do_cycle()
     }
     return busy;
 }
-icnt_base::icnt_base(uint64_t &current_cycle, unsigned int num_core, unsigned int num_mem) : componet(current_cycle),
-                                                                                             in_reqs(num_core),
-                                                                                             out_reqs(num_mem),
-                                                                                             in_resps(num_mem),
-                                                                                             out_resps(num_core) {}
+icnt_base::icnt_base(uint64_t &current_cycle,
+                     unsigned int num_core,
+                     unsigned int num_mem) : componet(current_cycle),
+                                             in_reqs(num_core),
+                                             out_reqs(num_mem),
+                                             in_resps(num_mem),
+                                             out_resps(num_core) {}

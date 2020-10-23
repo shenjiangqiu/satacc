@@ -7,6 +7,12 @@
 #include <memreq_info.h>
 #include <fstream>
 #include <sstream>
+
+namespace sjq
+{
+    bool inside_busy;
+} // namespace sjq
+
 void acc::init_watcher_and_clause()
 {
     //init the components
@@ -298,6 +304,10 @@ void acc::add_hook_from_trail_to_watcher()
     //add the pass for from trail to watchers
 
     clock_passes.push_back([this]() -> bool {
+        if (enable_sequential and !std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); }))
+        {
+            return false;
+        }
         bool busy = false;
         static int ii = 0;
         int watcher_id = ii;
@@ -307,6 +317,7 @@ void acc::add_hook_from_trail_to_watcher()
             busy = true;
             assert(in_m_trail.front()->as != nullptr);
             watchers[watcher_id]->in_task_queue.push_back(std::move(in_m_trail.front()));
+            sjq::inside_busy = true;
             in_m_trail.pop_front();
         }
         //change to another watcher now
@@ -515,6 +526,7 @@ acc::acc(unsigned t_num_watchers,
                                      num_clauses(t_num_clauses)
 
 {
+    sjq::inside_busy = false;
     std::string input_file_name = "satacc_config.txt";
     std::ifstream in(input_file_name);
     std::string icnt_type;
@@ -523,10 +535,16 @@ acc::acc(unsigned t_num_watchers,
     //read the config
     while (std::getline(in, line))
     {
+        if (line[0] == '#' or line[0] == ',' or line[0] == ' ')
+        {
+            //this line is comment
+            continue;
+        }
         std::istringstream in_line(line);
         std::string key;
         if (std::getline(in_line, key, '='))
         {
+
             std::string value;
             if (std::getline(in_line, value))
             {
@@ -572,6 +590,11 @@ acc::acc(unsigned t_num_watchers,
             m_icnt = new icnt_mesh(tcurrent_cycle,
                                    t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
         }
+    }
+
+    if (acc_config.count("seq"))
+    {
+        enable_sequential = acc_config["seq"] == "true" ? true : false;
     }
 
     // add the componets s

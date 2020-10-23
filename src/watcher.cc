@@ -7,6 +7,10 @@ watcher::watcher(uint64_t &t) : componet(t)
 watcher::~watcher()
 {
 }
+namespace sjq
+{
+    extern bool inside_busy;
+}
 
 bool watcher::do_cycle()
 {
@@ -97,6 +101,7 @@ bool watcher::from_read_watcher_to_mem()
         if (current_size >= total_size) //in case the total size is 0
         {
             waiting_read_watcher_queue.pop_front();
+            sjq::inside_busy = false; //finished this task
         }
         else
         {
