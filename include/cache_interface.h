@@ -68,15 +68,13 @@ class cache_interface : public componet
 
 private:
     cache_stats m_stats;
-    unsigned num_partition = 8;
-    unsigned N = 8;
     unsigned cache_delay = 2;
     unsigned delay_q_size = 64;
     unsigned miss_size = 64;
     unsigned in_size = 64;
     std::vector<sjq::cache> m_caches;
     dramsim3::MemorySystem m_mem;
-
+    unsigned n_partition;
     std::map<uint64_t, std::vector<req_ptr>> addr_to_req; //global,
 
     std::vector<std::deque<std::pair<uint64_t, req_ptr>>> delay_resp_queues; //multiple queue
@@ -88,7 +86,7 @@ private:
     uint64_t get_cache_addr(uint64_t addr)
     {
         auto block_content = addr & ((1ull << 6) - 1);
-        auto new_addr = addr >> get_log(N);
+        auto new_addr = addr >> get_log(n_partition);
         new_addr = addr & ~((1ull << 6) - 1);
         return new_addr + block_content;
     }
@@ -96,7 +94,7 @@ private:
     {
         auto block_content = cache_addr & ((1ull << 6) - 1);
         auto new_addr = cache_addr & ~((1ull << 6) - 1);
-        new_addr = new_addr << get_log(N);
+        new_addr = new_addr << get_log(n_partition);
         return new_addr + (partition_id << 6) + block_content;
     }
     //will consume the request in in_requests
@@ -306,7 +304,7 @@ private:
 public:
     unsigned get_partition_id(uint64_t addr)
     {
-        return get_partition_id_by_addr(addr, N);
+        return get_partition_id_by_addr(addr, n_partition);
     }
     std::string get_line_trace() const override
     {
@@ -338,7 +336,7 @@ public:
     std::string get_internal_size() const override
     {
         std::string ret;
-        for (auto i = 0u; i < N; i++)
+        for (auto i = 0u; i < n_partition; i++)
         {
             ret += fmt::format("name delay in out \n {} {} {} {}\n",
                                "cache_interface:",
@@ -355,7 +353,7 @@ public:
     bool empty() const override
     {
         bool empty = true;
-        for (auto i = 0u; i < N; i++)
+        for (auto i = 0u; i < n_partition; i++)
         {
             empty = empty and delay_resp_queues[i].empty() and in_request_queues[i].empty() and out_resp_queues[i].empty();
         }
@@ -366,16 +364,17 @@ public:
     {
         return in_request_queues[partition_id].size() < in_size;
     }
-    cache_interface(unsigned int total_size,
+    cache_interface(unsigned int total_size, unsigned num_partion,
                     uint64_t &t);
     cache_interface(int cache_set_assositive,
                     int cache_num_sets,
                     int cache_mshr_entries,
                     int cache_mshr_maxmerge,
+                    unsigned num_partition,
                     uint64_t &t) : componet(t),
-                                   m_caches(N,
+                                   m_caches(num_partition,
                                             sjq::cache(cache_set_assositive,
-                                                       cache_num_sets / N,
+                                                       cache_num_sets / num_partition,
                                                        sjq::cache::lru,
                                                        cache_mshr_entries,
                                                        cache_mshr_maxmerge,
@@ -384,9 +383,11 @@ public:
                                        "DDR4_4Gb_x16_2133_2.ini", "./",
                                        [this](uint64_t addr) { read_call_back(addr); },
                                        [this](uint64_t addr) { write_call_back(addr); }),
-                                   delay_resp_queues(N),
-                                   in_request_queues(N),
-                                   out_resp_queues(N)
+                                   n_partition(num_partition),
+                                   delay_resp_queues(num_partition),
+                                   in_request_queues(num_partition),
+                                   out_resp_queues(num_partition)
+
     {
         //m_mem("DDR4_4Gb_x16_2133_2.ini", "./", std::bind(read_call_back, std::placeholders::_1), std::bind(write_call_back, std::placeholders::_1));
     }

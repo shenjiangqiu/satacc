@@ -11,7 +11,27 @@
 #include <ring.h>
 #include <unordered_set>
 #include <mesh.h>
-class icnt_ring : public componet
+class icnt_base : public componet
+{
+    using req_ptr = std::unique_ptr<cache_interface_req>;
+    using req_ptr_q = std::deque<req_ptr>;
+    using req_ptr_q_vec = std::vector<req_ptr_q>;
+
+public:
+    //interfaces
+    req_ptr_q_vec in_reqs;
+    req_ptr_q_vec out_reqs;
+    req_ptr_q_vec in_resps;
+    req_ptr_q_vec out_resps;
+    icnt_base(uint64_t &current_cycle,
+              unsigned num_core,
+              unsigned num_mem);
+    virtual bool has_pkg_in_icnt() const = 0;
+    virtual bool has_buffer(int level, unsigned source) const = 0;
+    virtual ~icnt_base() {}
+};
+
+class icnt_ring : public icnt_base
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
     using req_ptr_q = std::deque<req_ptr>;
@@ -35,11 +55,6 @@ public:
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
 
-    //interfaces
-    req_ptr_q_vec in_reqs;
-    req_ptr_q_vec out_reqs;
-    req_ptr_q_vec in_resps;
-    req_ptr_q_vec out_resps;
     //static uint64_t current_cycle;
     //bool busy;
 
@@ -70,7 +85,7 @@ protected:
     virtual bool do_cycle() override;
 };
 
-class icnt_ideal : public componet
+class icnt_ideal : public icnt_base
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
     using req_ptr_q = std::deque<req_ptr>;
@@ -86,11 +101,6 @@ public:
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
 
-    //interfaces
-    req_ptr_q_vec in_reqs;
-    req_ptr_q_vec out_reqs;
-    req_ptr_q_vec in_resps;
-    req_ptr_q_vec out_resps;
     //static uint64_t current_cycle;
     //bool busy;
 
@@ -109,7 +119,7 @@ protected:
     virtual bool do_cycle() override;
 };
 
-class icnt_mesh : public componet
+class icnt_mesh : public icnt_base
 {
     using req_ptr = std::unique_ptr<cache_interface_req>;
     using req_ptr_q = std::deque<req_ptr>;
@@ -133,11 +143,6 @@ public:
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
 
-    //interfaces
-    req_ptr_q_vec in_reqs;
-    req_ptr_q_vec out_reqs;
-    req_ptr_q_vec in_resps;
-    req_ptr_q_vec out_resps;
     //static uint64_t current_cycle;
     //bool busy;
 

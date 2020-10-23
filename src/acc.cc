@@ -5,6 +5,8 @@
 #include <addr_utiles.h>
 #include <new_intersim_wrapper.h>
 #include <memreq_info.h>
+#include <fstream>
+#include <sstream>
 void acc::init_watcher_and_clause()
 {
     //init the components
@@ -186,7 +188,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
     //add pass to send cache response to clauses and watchers
     clock_passes.push_back([this]() {
         bool busy = false;
-        for (auto i = 0u; i < 8u; i++)
+        for (auto i = 0u; i < num_partition; i++)
         {
             if (!m_cache_interface->out_resp_queues[i].empty())
             {
@@ -480,7 +482,7 @@ void acc::add_hook_from_icnt_to_other()
                 m_icnt->out_resps[i].pop_front();
             }
         }
-        for (auto i = 0u; i < 8; i++)
+        for (auto i = 0u; i < num_partition; i++)
         {
             if (!m_icnt->out_reqs[i].empty() and m_cache_interface->recieve_rdy(i))
             {
@@ -513,11 +515,68 @@ acc::acc(unsigned t_num_watchers,
                                      num_clauses(t_num_clauses)
 
 {
+    std::string input_file_name = "satacc_config.txt";
+    std::ifstream in(input_file_name);
+    std::string icnt_type;
+    std::map<std::string, std::string> acc_config;
+    std::string line;
+    //read the config
+    while (std::getline(in, line))
+    {
+        std::istringstream in_line(line);
+        std::string key;
+        if (std::getline(in_line, key, '='))
+        {
+            std::string value;
+            if (std::getline(in_line, value))
+            {
+                acc_config.insert({key, value});
+            }
+        }
+    }
+    for (auto &&config : acc_config)
+    {
+        std::cout << fmt::format("{},{}\n", config.first, config.second);
+    }
+    //parse the number of mem partition
+    unsigned num_mem;
+    if (acc_config.count("mems"))
+    {
+        num_mem = std::stoul(acc_config["mems"]);
+    }
+    else
+    {
+        num_mem = 8;
+    }
+    num_partition = num_mem;
+    //parse the icnt type
+    if (acc_config.count("icnt"))
+    {
+        auto icnt = acc_config["icnt"];
+        if (icnt == "mesh")
+        {
+            m_icnt = new icnt_mesh(tcurrent_cycle,
+                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+        }
+        else if (icnt == "ring")
+        {
+            m_icnt = new icnt_ring(tcurrent_cycle,
+                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+        }
+        else if (icnt == "ideal")
+        {
+            m_icnt = new icnt_ideal(tcurrent_cycle, t_num_watchers, num_mem, t_num_clauses);
+        }
+        else
+        {
+            m_icnt = new icnt_mesh(tcurrent_cycle,
+                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+        }
+    }
 
     // add the componets s
-    m_icnt = new icnt_mesh(tcurrent_cycle,
-                          t_num_watchers, 8, t_num_clauses, 3, 1, 0, 64, 3);
-    m_cache_interface = new cache_interface(l3_cache_size, current_cycle);
+
+    m_cache_interface = new cache_interface(l3_cache_size, num_mem, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);

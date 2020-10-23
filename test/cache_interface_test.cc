@@ -35,7 +35,7 @@ TEST_CASE("cache_interface", "[basic][core][componet]")
     new_wrap1->add_detail(10, 13);
     //finish init
     uint64_t current_cycle;
-    auto m_c = cache_interface(16, 1 << 16, 16, 16, current_cycle);
+    auto m_c = cache_interface(16, 1 << 16, 16, 16, 8, current_cycle);
 
     m_c.current_cycle = 0;
     SECTION("first test")

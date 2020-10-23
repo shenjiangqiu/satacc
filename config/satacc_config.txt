@@ -1,0 +1,2 @@
+icnt=ideal
+mems=8

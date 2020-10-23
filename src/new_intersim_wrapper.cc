@@ -60,7 +60,7 @@ icnt_ring::icnt_ring(uint64_t &current_cycle,
                      int link_latency,
                      int arbitration_policy,
                      int link_width,
-                     int num_vc_cpu) : componet(current_cycle),
+                     int num_vc_cpu) : icnt_base(current_cycle, num_cores, num_mem),
                                        m_ring_network(current_cycle,
                                                       num_vc, link_latency,
                                                       arbitration_policy,
@@ -68,11 +68,7 @@ icnt_ring::icnt_ring(uint64_t &current_cycle,
                                                       num_vc_cpu),
                                        n_cores(num_cores),
                                        n_mems(num_mem),
-                                       n_clauses(num_clauses),
-                                       in_reqs(num_cores),
-                                       out_reqs(num_mem),
-                                       in_resps(num_mem),
-                                       out_resps(num_cores)
+                                       n_clauses(num_clauses)
 {
     //init icnt config
     m_ring_network.init(num_cores, 0, num_mem, 0, 0);
@@ -238,7 +234,7 @@ icnt_mesh::icnt_mesh(uint64_t &current_cycle,
                      int link_latency,
                      int arbitration_policy,
                      int link_width,
-                     int num_vc_cpu) : componet(current_cycle),
+                     int num_vc_cpu) : icnt_base(current_cycle, num_cores, num_mem),
                                        m_mesh_network(current_cycle,
                                                       num_vc, link_latency,
                                                       arbitration_policy,
@@ -246,11 +242,7 @@ icnt_mesh::icnt_mesh(uint64_t &current_cycle,
                                                       num_vc_cpu),
                                        n_cores(num_cores),
                                        n_mems(num_mem),
-                                       n_clauses(num_clauses),
-                                       in_reqs(num_cores),
-                                       out_reqs(num_mem),
-                                       in_resps(num_mem),
-                                       out_resps(num_cores)
+                                       n_clauses(num_clauses)
 {
     //init icnt config
     m_mesh_network.init(num_cores, 0, num_mem, 0, 0);
@@ -445,7 +437,7 @@ bool icnt_ideal::empty() const
            std::all_of(out_resps.begin(), out_resps.end(), [](auto &q) { return q.empty(); });
 }
 icnt_ideal::icnt_ideal(uint64_t &current_cycle, unsigned num_cores, unsigned num_mems, unsigned num_clauses)
-    : componet(current_cycle), n_cores(num_cores), n_mems(num_mems), n_clauses(num_clauses) {}
+    : icnt_base(current_cycle, num_cores, num_mems), n_cores(num_cores), n_mems(num_mems), n_clauses(num_clauses) {}
 
 bool icnt_ideal::do_cycle()
 {
@@ -493,3 +485,8 @@ bool icnt_ideal::do_cycle()
     }
     return busy;
 }
+icnt_base::icnt_base(uint64_t &current_cycle, unsigned int num_core, unsigned int num_mem) : componet(current_cycle),
+                                                                                             in_reqs(num_core),
+                                                                                             out_reqs(num_mem),
+                                                                                             in_resps(num_mem),
+                                                                                             out_resps(num_core) {}
