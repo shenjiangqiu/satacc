@@ -1,3 +1,5 @@
 icnt=ideal
 mems=8
 seq=true
+n_watchers=16
+n_clauses=16

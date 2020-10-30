@@ -402,7 +402,15 @@ bool icnt_ideal::has_pkg_in_icnt() const
 }
 bool icnt_ideal::has_buffer(int level, unsigned int source) const
 {
-    return level == 0 ? in_reqs[source].size() <= 16 : in_resps[source].size() <= 16;
+    bool result;
+    if(level==MEM_L2){
+        result=in_reqs[source].size() <= 16;
+    }else if(level==MEM_L3){
+        result= in_resps[source].size() <= 16;
+    }else{
+        throw std::runtime_error("can't be other value!");
+    }
+    return result;
 }
 std::string icnt_ideal::get_internal_size() const
 {
@@ -431,10 +439,12 @@ std::string icnt_ideal::get_line_trace() const
 }
 bool icnt_ideal::empty() const
 {
-    return std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
+    auto result=std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
            std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
            std::all_of(in_resps.begin(), in_resps.end(), [](auto &q) { return q.empty(); }) and
            std::all_of(out_resps.begin(), out_resps.end(), [](auto &q) { return q.empty(); });
+    //std::cout<<result<<std::endl;
+    return result;
 }
 icnt_ideal::icnt_ideal(uint64_t &current_cycle, unsigned num_cores, unsigned num_mems, unsigned num_clauses)
     : icnt_base(current_cycle, num_cores, num_mems), n_cores(num_cores), n_mems(num_mems), n_clauses(num_clauses) {}

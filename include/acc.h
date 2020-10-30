@@ -30,6 +30,7 @@ class acc : public componet
     using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
+    void parse_file();
     unsigned private_cache_size;
     /* data */
     unsigned num_watchers;
@@ -71,8 +72,8 @@ public:
         std::string r;
         for (auto i : m_componets)
         {
-            r.append(i->get_internal_size());
-            r.append("\n");
+            r+=(i->get_internal_size());
+            r+=("\n");
         }
         return r;
     }
@@ -91,7 +92,10 @@ public:
     bool empty() const override
     {
 
-        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
+        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { 
+
+            
+            return c->empty(); });
     }
     std::deque<req_ptr> in_m_trail;
 

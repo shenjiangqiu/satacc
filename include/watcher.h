@@ -47,8 +47,11 @@ private:
     std::deque<req_ptr> waiting_read_watcher_queue;  // int: remaing watcher to be read
     std::deque<req_ptr> waiting_process_queue;       // int : remaining watcher to be processed
     int next_clause = 0;
+    int m_id;
     /* data */
 public:
+    static int global_id;
+
     int next_c(int total)
     {
         return next_clause = (next_clause + 1) % total;
@@ -60,15 +63,16 @@ public:
     }
     std::string get_internal_size() const override
     {
-        return fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {} {} {} {} {} {} {} {} {}", "watcher",
-                           waiting_value_watcher_queue.size(),
-                           waiting_read_watcher_queue.size(),
-                           waiting_process_queue.size(),
-                           in_task_queue.size(),
-                           in_memory_resp_queue.size(),
-                           out_memory_read_queue.size(),
-                           out_send_queue.size(),
-                           out_write_watcher_list_queue.size());
+        auto r = fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {}", "watcher",m_id,
+                             waiting_value_watcher_queue.size(),
+                             waiting_read_watcher_queue.size(),
+                             waiting_process_queue.size(),
+                             in_task_queue.size(),
+                             in_memory_resp_queue.size(),
+                             out_memory_read_queue.size(),
+                             out_send_queue.size(),
+                             out_write_watcher_list_queue.size());
+        return r;
     }
     bool empty() const override
     {

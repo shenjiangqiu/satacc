@@ -18,7 +18,7 @@ target_include_directories(satacc PUBLIC
 if(SJQ_ICNT_DEBUG)
 target_compile_definitions(satacc PUBLIC SJQ_ICNT_DEBUG)
 endif()
-target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt::fmt-header-only 
+target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt 
 sjqcache dramsim3 minisat_utiles mem_req_interface sjqutils)
 target_link_libraries(satacc PUBLIC intersim2 new_intersim)
 add_subdirectory(test_utils)

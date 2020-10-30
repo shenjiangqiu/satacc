@@ -299,6 +299,7 @@ void acc::add_hook_from_private_cache()
         });
     }
 }
+
 void acc::add_hook_from_trail_to_watcher()
 {
     //add the pass for from trail to watchers
@@ -516,17 +517,9 @@ acc::acc(unsigned t_num_watchers,
          uint64_t &t_current_cycle) : acc(t_num_watchers, t_num_clauses,
                                           1 << 10, 16 << 20,
                                           t_current_cycle) {}
-acc::acc(unsigned t_num_watchers,
-         unsigned t_num_clauses,
-         unsigned private_cache_size,
-         unsigned l3_cache_size,
-         uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
-                                     private_cache_size(private_cache_size),
-                                     num_watchers(t_num_watchers),
-                                     num_clauses(t_num_clauses)
 
+void acc::parse_file()
 {
-    sjq::inside_busy = false;
     std::string input_file_name = "satacc_config.txt";
     std::ifstream in(input_file_name);
     std::string icnt_type;
@@ -556,6 +549,16 @@ acc::acc(unsigned t_num_watchers,
     {
         std::cout << fmt::format("{},{}\n", config.first, config.second);
     }
+    if (acc_config.count("n_watchers"))
+    {
+        num_watchers = std::stoul(acc_config["n_watchers"]);
+    }
+    else
+    {
+        num_watchers = 16;
+    }
+    num_clauses = acc_config.count("n_clauses") ? std::stoul(acc_config["n_clauses"]) : num_watchers;
+
     //parse the number of mem partition
     unsigned num_mem;
     if (acc_config.count("mems"))
@@ -573,22 +576,22 @@ acc::acc(unsigned t_num_watchers,
         auto icnt = acc_config["icnt"];
         if (icnt == "mesh")
         {
-            m_icnt = new icnt_mesh(tcurrent_cycle,
-                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+            m_icnt = new icnt_mesh(current_cycle,
+                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
         }
         else if (icnt == "ring")
         {
-            m_icnt = new icnt_ring(tcurrent_cycle,
-                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+            m_icnt = new icnt_ring(current_cycle,
+                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
         }
         else if (icnt == "ideal")
         {
-            m_icnt = new icnt_ideal(tcurrent_cycle, t_num_watchers, num_mem, t_num_clauses);
+            m_icnt = new icnt_ideal(current_cycle, num_watchers, num_mem, num_clauses);
         }
         else
         {
-            m_icnt = new icnt_mesh(tcurrent_cycle,
-                                   t_num_watchers, num_mem, t_num_clauses, 3, 1, 0, 64, 3);
+            m_icnt = new icnt_mesh(current_cycle,
+                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
         }
     }
 
@@ -596,10 +599,26 @@ acc::acc(unsigned t_num_watchers,
     {
         enable_sequential = acc_config["seq"] == "true" ? true : false;
     }
+}
+
+acc::acc(unsigned t_num_watchers,
+         unsigned t_num_clauses,
+         unsigned private_cache_size,
+         unsigned l3_cache_size,
+         uint64_t &tcurrent_cycle) : componet(tcurrent_cycle),
+                                     private_cache_size(private_cache_size),
+                                     num_watchers(t_num_watchers),
+                                     num_clauses(t_num_clauses)
+
+{
+
+    //read the configure file. will set num_watcher and num_clause again. so the previouse value will be override!
+    parse_file();
+    sjq::inside_busy = false;
 
     // add the componets s
 
-    m_cache_interface = new cache_interface(l3_cache_size, num_mem, current_cycle);
+    m_cache_interface = new cache_interface(l3_cache_size, num_partition, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);

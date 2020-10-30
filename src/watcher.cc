@@ -2,8 +2,9 @@
 #include <ptr_copy.hpp>
 watcher::watcher(uint64_t &t) : componet(t)
 {
+    m_id=global_id++;
 }
-
+int watcher::global_id=0;
 watcher::~watcher()
 {
 }
