@@ -1,7 +1,7 @@
 icnt=ideal
 #icnt=ideal,mesh,ring
 mems=8
-seq=true
+seq=false
 n_watchers=16
 n_clauses=16
 ideal_memory=false

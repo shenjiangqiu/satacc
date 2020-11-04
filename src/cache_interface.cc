@@ -39,8 +39,16 @@ bool cache_interface::from_in_to_cache()
             auto &req = in_request_queue.front();
             if (ideal_l3)
             {
-                delay_resp_queues[i].push_back({current_cycle, std::move(req)});
-                in_request_queue.pop_front();
+                if (req->type == AccessType::WriteClause or req->type == AccessType::WriteWatcherList or req->type == AccessType::EvictWrite)
+                {
+                    in_request_queue.pop_front();
+                }
+                else
+                {
+                    delay_resp_queues[i].push_back({current_cycle, std::move(req)});
+
+                    in_request_queue.pop_front();
+                }
                 continue;
             }
             auto &as = req->as;
@@ -169,6 +177,10 @@ bool cache_interface::from_in_to_cache()
 }
 bool cache_interface::from_miss_q_to_dram()
 {
+    if (miss_queue.empty())
+    {
+        return false;
+    }
     bool busy = false;
     bool is_write = !miss_queue.front().first;
     if (is_ideal_dram)
