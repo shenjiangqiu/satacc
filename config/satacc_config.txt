@@ -1,5 +1,9 @@
 icnt=ideal
+#icnt=ideal,mesh,ring
 mems=8
 seq=true
 n_watchers=16
 n_clauses=16
+ideal_memory=false
+ideal_l3cache=false
+multi_port=1

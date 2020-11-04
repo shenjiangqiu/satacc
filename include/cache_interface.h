@@ -31,6 +31,10 @@ public:
     unsigned long long read_clause_value_miss = 0;
     unsigned long long write_watcher_list_miss = 0;
     unsigned long long write_clause_miss = 0;
+    unsigned long long evict_write_hit = 0;
+    unsigned long long evict_write_miss = 0;
+    unsigned long long write_miss_read_hit = 0;
+    unsigned long long write_miss_read_miss = 0;
 
     void update(bool hit, const cache_interface_req &req)
     {
@@ -49,11 +53,17 @@ public:
         case AccessType::ReadWatcherData:
             hit ? read_watcher_data_hit++ : read_watcher_data_miss++;
             break;
-        case AccessType::writeClause:
+        case AccessType::WriteClause:
             hit ? write_clause_hit++ : write_clause_miss++;
             break;
-        case AccessType::writeWatcherList:
+        case AccessType::WriteWatcherList:
             hit ? write_watcher_list_hit++ : write_watcher_list_miss++;
+            break;
+        case AccessType::EvictWrite:
+            hit ? evict_write_hit++ : evict_write_miss++;
+            break;
+        case AccessType::WriteMissRead:
+            hit ? write_miss_read_hit++ : write_miss_read_miss++;
             break;
         default:
             throw;
@@ -97,6 +107,9 @@ private:
     void write_call_back(uint64_t);
 
     std::array<uint64_t, (int)AccessType::max> access_hist = {0};
+    bool is_ideal_dram;
+    bool ideal_l3;
+    unsigned num_ports;
 
     /* data */
 public:
@@ -107,13 +120,16 @@ public:
     bool empty() const override;
 
     bool recieve_rdy(unsigned partition_id) const;
-    cache_interface(unsigned int total_size, unsigned num_partion,
+    cache_interface(unsigned int total_size, unsigned num_partion, bool ideal_dram, bool ideal_l3, unsigned num_ports,
                     uint64_t &t);
     cache_interface(int cache_set_assositive,
                     int cache_num_sets,
                     int cache_mshr_entries,
                     int cache_mshr_maxmerge,
                     unsigned num_partition,
+                    bool,
+                    bool,
+                    unsigned,
                     uint64_t &t);
     ~cache_interface();
 
@@ -123,7 +139,6 @@ public:
 
 protected:
     virtual bool do_cycle() override;
-
 };
 
 #endif

@@ -49,6 +49,9 @@ private:
     //icnt *m_icnt;
     icnt_base *m_icnt;
     bool enable_sequential = false;
+    bool ideal_memory = false;
+    bool ideal_l3cache = false;
+    unsigned multi_l3cache_port = 1;
     //important
     //all the componets are owned by m_componnets
     //
@@ -72,8 +75,8 @@ public:
         std::string r;
         for (auto i : m_componets)
         {
-            r+=(i->get_internal_size());
-            r+=("\n");
+            r += (i->get_internal_size());
+            r += ("\n");
         }
         return r;
     }
@@ -92,10 +95,7 @@ public:
     bool empty() const override
     {
 
-        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { 
-
-            
-            return c->empty(); });
+        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
     }
     std::deque<req_ptr> in_m_trail;
 

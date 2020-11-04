@@ -173,7 +173,7 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
             size = 64;
         }
 
-        /* code */
+        
         break;
     case AccessType::ReadClauseValue:
     case AccessType::ReadWatcherValue:
@@ -185,12 +185,12 @@ unsigned icnt::get_pkg_size(unsigned source, unsigned dest, const std::unique_pt
         {
             size = 10;
         }
-        /* code */
         break;
-    case AccessType::writeClause:
-    case AccessType::writeWatcherList:
+    case AccessType::WriteClause:
+    case AccessType::WriteWatcherList:
         size = 12;
         break;
+    
     default:
         throw std::runtime_error("no such type");
         break;

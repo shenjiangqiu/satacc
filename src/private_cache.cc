@@ -43,6 +43,7 @@ bool private_cache::from_in_to_out()
         addr = addr & ((1ull << 32) - 1); //only cover 4gb memory
         auto block_addr = addr & ~((1 << 6) - 1);
         auto result = m_cache.try_access(block_addr, cache_type);
+        //auto result = sjq::cache::hit;
         if (result == sjq::cache::resfail)
         {
             busy = false;
@@ -65,7 +66,18 @@ bool private_cache::from_in_to_out()
             case sjq::cache::miss:
                 out_miss_queue.push_back(copy_unit_ptr(req));
                 assert(addr_to_req.find(block_addr) == addr_to_req.end());
+                //miss and evict some entry, write back the entry.
+                if (m_cache.get_last_evict() != 0)
+                {
+                    //the last evict enty was valid, shoud write back.
+                    auto new_req = copy_unit_ptr(req);
+                    new_req->type = AccessType::EvictWrite;
+                    new_req->addr = m_cache.get_last_evict();
+                }
+                
+
                 addr_to_req[block_addr].push_back(std::move(req));
+
                 break;
             default:
                 throw;

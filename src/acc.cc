@@ -199,6 +199,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
             if (!m_cache_interface->out_resp_queues[i].empty())
             {
                 auto &req = m_cache_interface->out_resp_queues[i].front();
+                assert(i == get_partition_id_by_addr(get_addr_by_req(req), num_partition));
                 m_icnt->in_resps[i].push_back(std::move(req));
                 m_cache_interface->out_resp_queues[i].pop_front();
                 /*
@@ -438,9 +439,12 @@ void acc::add_hook_from_icnt_to_other()
         auto busy = false;
         for (auto &&[i, watcher_unit] : enumerate(watchers))
         {
+            int remain_port = multi_l3cache_port;
+
             //this for loop: for each watcher unit
-            if (!m_icnt->out_resps[i].empty() and watcher_unit->recieve_mem_rdy())
+            while (!m_icnt->out_resps[i].empty() and watcher_unit->recieve_mem_rdy() and remain_port-- > 0)
             {
+
                 //this if: this is from icnt to watchers or clauses or private cache
                 busy = true;
                 auto &req = m_icnt->out_resps[i].front(); //get the owner;
@@ -496,8 +500,10 @@ void acc::add_hook_from_icnt_to_other()
         }
         for (auto i = 0u; i < num_partition; i++)
         {
-            if (!m_icnt->out_reqs[i].empty() and m_cache_interface->recieve_rdy(i))
+            int remain_port = multi_l3cache_port;
+            while (!m_icnt->out_reqs[i].empty() and m_cache_interface->recieve_rdy(i) and remain_port-- > 0)
             {
+
                 auto &req = m_icnt->out_reqs[i].front();
                 busy = true;
 #ifdef SJQ_ICNT_DEBUG
@@ -599,6 +605,33 @@ void acc::parse_file()
     {
         enable_sequential = acc_config["seq"] == "true" ? true : false;
     }
+
+    if (acc_config.count("ideal_memory"))
+    {
+        if (acc_config["ideal_memory"] == "true")
+        {
+            ideal_memory = true;
+        }
+    }
+    if (acc_config.count("ideal_l3cache"))
+    {
+        if (acc_config["ideal_l3cache"] == "true")
+        {
+            ideal_l3cache = true;
+        }
+    }
+    if (acc_config.count("multi_port"))
+    {
+        auto number = std::stoul(acc_config["multi_port"]);
+        if (number > 1)
+        {
+            multi_l3cache_port = number;
+        }
+        else
+        {
+            multi_l3cache_port = 1;
+        }
+    }
 }
 
 acc::acc(unsigned t_num_watchers,
@@ -618,7 +651,7 @@ acc::acc(unsigned t_num_watchers,
 
     // add the componets s
 
-    m_cache_interface = new cache_interface(l3_cache_size, num_partition, current_cycle);
+    m_cache_interface = new cache_interface(l3_cache_size, num_partition, ideal_memory, ideal_l3cache, multi_l3cache_port, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);

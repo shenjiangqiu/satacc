@@ -40,9 +40,22 @@ unsigned int get_pkg_size(bool cpu_to_mem, unsigned int, unsigned int, const std
         }
         /* code */
         break;
-    case AccessType::writeClause:
-    case AccessType::writeWatcherList:
+    case AccessType::WriteClause:
+    case AccessType::WriteWatcherList:
         size = 12;
+        break;
+    case AccessType::WriteMissRead:
+        if (cpu_to_mem)
+        {
+            size = 12;
+        }
+        else
+        {
+            size = 64;
+        }
+        break;
+    case AccessType::EvictWrite:
+        size = 64;
         break;
     default:
         throw std::runtime_error("no such type");
@@ -403,11 +416,16 @@ bool icnt_ideal::has_pkg_in_icnt() const
 bool icnt_ideal::has_buffer(int level, unsigned int source) const
 {
     bool result;
-    if(level==MEM_L2){
-        result=in_reqs[source].size() <= 16;
-    }else if(level==MEM_L3){
-        result= in_resps[source].size() <= 16;
-    }else{
+    if (level == MEM_L2)
+    {
+        result = in_reqs[source].size() <= 16;
+    }
+    else if (level == MEM_L3)
+    {
+        result = in_resps[source].size() <= 16;
+    }
+    else
+    {
         throw std::runtime_error("can't be other value!");
     }
     return result;
@@ -439,10 +457,10 @@ std::string icnt_ideal::get_line_trace() const
 }
 bool icnt_ideal::empty() const
 {
-    auto result=std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
-           std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
-           std::all_of(in_resps.begin(), in_resps.end(), [](auto &q) { return q.empty(); }) and
-           std::all_of(out_resps.begin(), out_resps.end(), [](auto &q) { return q.empty(); });
+    auto result = std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
+                  std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
+                  std::all_of(in_resps.begin(), in_resps.end(), [](auto &q) { return q.empty(); }) and
+                  std::all_of(out_resps.begin(), out_resps.end(), [](auto &q) { return q.empty(); });
     //std::cout<<result<<std::endl;
     return result;
 }
@@ -453,7 +471,7 @@ bool icnt_ideal::do_cycle()
 {
     for (auto &&[i, q] : enumerate(in_reqs))
     {
-        if (!q.empty())
+        while (!q.empty())
         {
             busy = true;
             auto &req = q.front();
@@ -472,7 +490,7 @@ bool icnt_ideal::do_cycle()
     {
         //from mem to cores
 
-        if (!q.empty())
+        while (!q.empty())
         {
             auto &req = q.front();
             assert(i == get_partition_id_by_addr(get_addr_by_req(req), n_mems));

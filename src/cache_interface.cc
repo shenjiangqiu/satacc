@@ -4,8 +4,8 @@
 #include <icnt_wrapper.h>
 #include <enumerate.h>
 
-cache_interface::cache_interface(unsigned int total_size, unsigned num_partition,
-                                 uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, num_partition, t)
+cache_interface::cache_interface(unsigned int total_size, unsigned num_partition, bool ideal_dram, bool ideal_l3, unsigned num_ports,
+                                 uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, num_partition, ideal_dram, ideal_l3, num_ports, t)
 {
 }
 
@@ -28,13 +28,21 @@ bool cache_interface::from_in_to_cache()
 {
     bool busy = false;
     for (auto &&[i, in_request_queue] : enumerate(in_request_queues))
-        if (!in_request_queue.empty() and miss_queue.size() < miss_size)
+    {
+        auto remain_ports = num_ports;
+        while (!in_request_queue.empty() and miss_queue.size() < miss_size and remain_ports-- > 0)
         {
             busy = true;
 
             //step one: get addr for this request.
 
             auto &req = in_request_queue.front();
+            if (ideal_l3)
+            {
+                delay_resp_queues[i].push_back({current_cycle, std::move(req)});
+                in_request_queue.pop_front();
+                continue;
+            }
             auto &as = req->as;
             auto type = req->type;
             auto watcherId = req->watcherId;
@@ -67,11 +75,11 @@ bool cache_interface::from_in_to_cache()
                 addr = as->get_block_addr(watcherId);
 
                 break;
-            case AccessType::writeClause:
+            case AccessType::WriteClause:
                 cache_type = sjq::cache::write;
                 addr = as->get_clause_addr(watcherId);
                 break;
-            case AccessType::writeWatcherList:
+            case AccessType::WriteWatcherList:
                 //in_request_queue.pop_front();
                 cache_type = sjq::cache::write;
                 if (as->get_is_push_to_other(watcherId))
@@ -79,6 +87,11 @@ bool cache_interface::from_in_to_cache()
                 else
                     addr = as->get_addr(); //current watcher list
                 //TODO need to change this
+                break;
+
+            case AccessType::WriteMissRead:
+            case AccessType::EvictWrite:
+                addr = req->addr;
                 break;
             default:
                 throw;
@@ -95,12 +108,12 @@ bool cache_interface::from_in_to_cache()
             //auto cache_result = cache::hit;
             if (cache_result == sjq::cache::resfail)
             {
-                return false;
+                continue;
             }
 
             if (cache_result == sjq::cache::miss && miss_queue.size() >= miss_size)
             {
-                return false;
+                continue;
             }
 
             cache_result = m_caches[i].access(cache_addr, cache_type); //fix the cache access behavior, now can support write access
@@ -118,7 +131,7 @@ bool cache_interface::from_in_to_cache()
                         miss_queue.push_back({false, from_cache_addr_to_real_addr(last_evicted, i)});
                     }
                 }
-                return true;
+                continue;
             }
             //cache_result = sjq::cache::hit;
             switch (cache_result)
@@ -151,12 +164,21 @@ bool cache_interface::from_in_to_cache()
 
             in_request_queue.pop_front();
         }
+    }
     return busy;
 }
 bool cache_interface::from_miss_q_to_dram()
 {
     bool busy = false;
     bool is_write = !miss_queue.front().first;
+    if (is_ideal_dram)
+    {
+        dram_resp_queue.push_back(miss_queue.front().second);
+        miss_queue.pop_front();
+        busy = true;
+        return busy;
+    }
+    //the tuple: first means is read, second is the address.
     if (!miss_queue.empty() and m_mem.WillAcceptTransaction(miss_queue.front().second, is_write))
     {
         busy = true;
@@ -292,6 +314,9 @@ cache_interface::cache_interface(int cache_set_assositive,
                                  int cache_mshr_entries,
                                  int cache_mshr_maxmerge,
                                  unsigned num_partition,
+                                 bool tis_ideal_memory,
+                                 bool ideal_l3,
+                                 unsigned num_ports,
                                  uint64_t &t) : componet(t),
                                                 m_caches(num_partition,
                                                          sjq::cache(cache_set_assositive,
@@ -306,6 +331,9 @@ cache_interface::cache_interface(int cache_set_assositive,
                                                     [this](uint64_t addr) { write_call_back(addr); }),
                                                 n_partition(num_partition),
                                                 delay_resp_queues(num_partition),
+                                                is_ideal_dram(tis_ideal_memory),
+                                                ideal_l3(ideal_l3),
+                                                num_ports(num_ports),
                                                 in_request_queues(num_partition),
                                                 out_resp_queues(num_partition)
 
