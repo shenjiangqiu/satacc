@@ -54,7 +54,6 @@ bool private_cache::from_in_to_out()
             result = m_cache.access(block_addr, cache_type);
             switch (result)
             {
-                //FIXME copy or move here
             case sjq::cache::hit:
                 out_send_q.push_back(std::move(req));
                 /* code */
@@ -73,8 +72,8 @@ bool private_cache::from_in_to_out()
                     auto new_req = copy_unit_ptr(req);
                     new_req->type = AccessType::EvictWrite;
                     new_req->addr = m_cache.get_last_evict();
+                    out_miss_queue.push_back(std::move(new_req));
                 }
-                
 
                 addr_to_req[block_addr].push_back(std::move(req));
 

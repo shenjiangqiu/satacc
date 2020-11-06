@@ -57,6 +57,16 @@ unsigned int get_pkg_size(bool cpu_to_mem, unsigned int, unsigned int, const std
     case AccessType::EvictWrite:
         size = 64;
         break;
+    case AccessType::ReadWatcherMetaData:
+        if (cpu_to_mem)
+        {
+            size = 12;
+        }
+        else
+        {
+            size = 64;
+        }
+        break;
     default:
         throw std::runtime_error("no such type");
         break;

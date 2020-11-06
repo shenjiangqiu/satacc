@@ -19,6 +19,7 @@ class cache_stats
 {
 public:
     unsigned long long read_watcher_data_hit = 0;
+    unsigned long long read_watcher_meta_hit = 0;
     unsigned long long read_watcher_value_hit = 0;
     unsigned long long read_clause_data_hit = 0;
     unsigned long long read_clause_value_hit = 0;
@@ -26,6 +27,7 @@ public:
     unsigned long long write_clause_hit = 0;
 
     unsigned long long read_watcher_data_miss = 0;
+    unsigned long long read_watcher_meta_miss = 0;
     unsigned long long read_watcher_value_miss = 0;
     unsigned long long read_clause_data_miss = 0;
     unsigned long long read_clause_value_miss = 0;
@@ -52,6 +54,9 @@ public:
             break;
         case AccessType::ReadWatcherData:
             hit ? read_watcher_data_hit++ : read_watcher_data_miss++;
+            break;
+        case AccessType::ReadWatcherMetaData:
+            hit ? read_watcher_meta_hit++ : read_watcher_meta_miss++;
             break;
         case AccessType::WriteClause:
             hit ? write_clause_hit++ : write_clause_miss++;

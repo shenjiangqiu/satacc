@@ -27,7 +27,7 @@ private:
      * waiting_value_watcher_queue
     */
     bool from_value_to_out_mem();
-
+    bool from_watcher_meta_to_memory();
     //from waiting_process_queue to out_send_queue
     bool from_process_to_out();
 
@@ -46,7 +46,10 @@ private:
     std::deque<req_ptr> waiting_value_watcher_queue; // int : remaining value to be processed
     std::deque<req_ptr> waiting_read_watcher_queue;  // int: remaing watcher to be read
     std::deque<req_ptr> waiting_process_queue;       // int : remaining watcher to be processed
+    std::deque<req_ptr> waiting_read_meta_queue;
+
     int next_clause = 0;
+
     int m_id;
     /* data */
 public:
@@ -63,7 +66,8 @@ public:
     }
     std::string get_internal_size() const override
     {
-        auto r = fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {}", "watcher",m_id,
+        auto r = fmt::format("name w_meta w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {} {}", "watcher", m_id,
+                             waiting_read_meta_queue.size(),
                              waiting_value_watcher_queue.size(),
                              waiting_read_watcher_queue.size(),
                              waiting_process_queue.size(),
@@ -76,7 +80,7 @@ public:
     }
     bool empty() const override
     {
-        bool e = waiting_value_watcher_queue.empty() and waiting_read_watcher_queue.empty() and waiting_process_queue.empty() and
+        bool e = waiting_read_meta_queue.empty() and waiting_value_watcher_queue.empty() and waiting_read_watcher_queue.empty() and waiting_process_queue.empty() and
                  in_task_queue.empty() and in_memory_resp_queue.empty() and out_memory_read_queue.empty() and out_send_queue.empty() and out_write_watcher_list_queue.empty();
         return e;
     }
@@ -96,7 +100,6 @@ public:
     std::deque<req_ptr> in_memory_resp_queue;
 
     std::deque<req_ptr> out_write_watcher_list_queue;
-
     watcher(uint64_t &t);
     ~watcher();
 

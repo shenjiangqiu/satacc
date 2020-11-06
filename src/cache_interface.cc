@@ -3,6 +3,7 @@
 #include <functional>
 #include <icnt_wrapper.h>
 #include <enumerate.h>
+#include <req_addr.h>
 
 cache_interface::cache_interface(unsigned int total_size, unsigned num_partition, bool ideal_dram, bool ideal_l3, unsigned num_ports,
                                  uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, num_partition, ideal_dram, ideal_l3, num_ports, t)
@@ -51,61 +52,16 @@ bool cache_interface::from_in_to_cache()
                 }
                 continue;
             }
-            auto &as = req->as;
             auto type = req->type;
-            auto watcherId = req->watcherId;
-            auto clauseId = req->clauseId;
             uint64_t addr = 0;
             auto cache_type = sjq::cache::read;
             access_hist[(int)type]++;
 
-            switch (type)
+            addr = get_addr_by_req(req);
+            if (req->type == AccessType::WriteClause or req->type == AccessType::WriteWatcherList or req->type == AccessType::EvictWrite)
             {
-            case AccessType::ReadClauseData:
-                /* code */
-
-                addr = as->get_clause_addr(watcherId);
-                addr += clauseId * 4;
-                cache_type = sjq::cache::read;
-
-                break;
-            case AccessType::ReadClauseValue:
-                addr = as->get_clause_detail(watcherId)[clauseId];
-                //cache_type = 1;
-                break;
-            case AccessType::ReadWatcherData:
-                assert(as != nullptr);
-                addr = as->get_addr();
-                addr += 4 * watcherId;
-                break;
-            case AccessType::ReadWatcherValue:
-                assert(as->get_watcher_size() != 0);
-                addr = as->get_block_addr(watcherId);
-
-                break;
-            case AccessType::WriteClause:
                 cache_type = sjq::cache::write;
-                addr = as->get_clause_addr(watcherId);
-                break;
-            case AccessType::WriteWatcherList:
-                //in_request_queue.pop_front();
-                cache_type = sjq::cache::write;
-                if (as->get_is_push_to_other(watcherId))
-                    addr = as->get_pushed_watcher_list_tail_addr(watcherId);
-                else
-                    addr = as->get_addr(); //current watcher list
-                //TODO need to change this
-                break;
-
-            case AccessType::WriteMissRead:
-            case AccessType::EvictWrite:
-                addr = req->addr;
-                break;
-            default:
-                throw;
-                break;
             }
-
             addr = addr & ((1ull << 32) - 1); //only cover 4gb memory
             //addr should remove the partition mask...
             //auto partition_bits = get_log(N);
@@ -126,21 +82,18 @@ bool cache_interface::from_in_to_cache()
 
             cache_result = m_caches[i].access(cache_addr, cache_type); //fix the cache access behavior, now can support write access
             m_stats.update(!(cache_result == sjq::cache::miss), *req);
-            auto last_evicted = cache_result == sjq::cache::miss ? m_caches[i].get_last_evict() : 0;
             //here we need to deal with the write traffic,
-
             if (cache_type == sjq::cache::write)
             {
-                in_request_queue.pop_front();
-                if (cache_result == sjq::cache::miss)
+                if (cache_result == sjq::cache::miss and m_caches[i].get_last_evict())
                 {
-                    if (last_evicted)
-                    {
-                        miss_queue.push_back({false, from_cache_addr_to_real_addr(last_evicted, i)});
-                    }
+                    miss_queue.push_back({false, from_cache_addr_to_real_addr(m_caches[i].get_last_evict(), i)});
                 }
+                in_request_queue.pop_front();
+
                 continue;
             }
+            //for the read access
             //cache_result = sjq::cache::hit;
             switch (cache_result)
             {
