@@ -49,8 +49,8 @@ private:
     std::unordered_set<cache_interface_req *> current_inflight_pkg; //do not own the ownership
 
 public:
-    bool has_pkg_in_icnt() const;
-    bool has_buffer(int level, unsigned source) const;
+    bool has_pkg_in_icnt() const override;
+    bool has_buffer(int level, unsigned source) const override;
     virtual std::string get_internal_size() const override;
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
@@ -58,7 +58,7 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
 
-    virtual bool empty() const
+    virtual bool empty() const override
     {
         return std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
                std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
@@ -95,8 +95,8 @@ class icnt_ideal : public icnt_base
     unsigned n_clauses;
 
 public:
-    bool has_pkg_in_icnt() const;
-    bool has_buffer(int level, unsigned source) const;
+    bool has_pkg_in_icnt() const override;
+    bool has_buffer(int level, unsigned source) const override;
     virtual std::string get_internal_size() const override;
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
@@ -104,7 +104,7 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
 
-    virtual bool empty() const;
+    virtual bool empty() const override;
 
     icnt_ideal(uint64_t &current_cycle,
                unsigned num_cores,
@@ -137,8 +137,8 @@ private:
     std::unordered_set<cache_interface_req *> current_inflight_pkg; //do not own the ownership
 
 public:
-    bool has_pkg_in_icnt() const;
-    bool has_buffer(int level, unsigned source) const;
+    bool has_pkg_in_icnt() const override;
+    bool has_buffer(int level, unsigned source) const override;
     virtual std::string get_internal_size() const override;
     //virtual double get_busy_percent() const = 0;
     virtual std::string get_line_trace() const override;
@@ -146,7 +146,7 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
 
-    virtual bool empty() const
+    virtual bool empty() const override
     {
         return std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
                std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and

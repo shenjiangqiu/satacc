@@ -41,7 +41,7 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
 
-    virtual bool empty() const
+    virtual bool empty() const override
     {
         return std::all_of(in_reqs.begin(), in_reqs.end(), [](auto &q) { return q.empty(); }) and
                std::all_of(out_reqs.begin(), out_reqs.end(), [](auto &q) { return q.empty(); }) and
