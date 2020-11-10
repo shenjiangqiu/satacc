@@ -82,12 +82,8 @@ public:
     }
     std::string get_internal_size() const override
     {
-<<<<<<< HEAD
-        auto r = fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {}", "watcher", m_id,
-=======
         auto r = fmt::format("name w_meta w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {} {}", "watcher", m_id,
                              waiting_read_meta_queue.size(),
->>>>>>> 1c88be08f395d617237b6a0fab4e15776b52aa00
                              waiting_value_watcher_queue.size(),
                              waiting_read_watcher_queue.size(),
                              waiting_process_queue.size(),
