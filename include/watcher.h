@@ -6,6 +6,7 @@
 #include <tuple>
 #include "cache_interface.h"
 #include <fmt/format.h>
+#include <set>
 class watcher : public componet
 {
     using pair_int_as = std::pair<int, assign_wrap *>;
@@ -14,11 +15,21 @@ class watcher : public componet
     using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
+    unsigned outgoing_read_watcher_data = 0;
+    unsigned outgoing_read_watcher_value = 0;
+    //std::set<req_ptr &> waiting_watcher_value;
     unsigned read_size = 64;
     unsigned value_size = 64;
     unsigned process_size = 64;
     unsigned in_size = 64;
     unsigned in_mem_size = 64;
+
+    unsigned long long total_idle = 0;
+    unsigned long long total_busy = 0;
+    unsigned long long total_idle_no_task = 0;
+    unsigned long long total_idle_no_watcher_meta_data = 0;
+    unsigned long long total_idle_no_watcher_data = 0;
+    unsigned long long total_idle_no_value = 0;
     /** 
      * from waiting_value_watcher_queue to out_memory_read_queue,
      * notice: each time only read one value, because they are not continued
@@ -59,11 +70,16 @@ public:
 
     std::string get_line_trace() const override
     {
-        return fmt::format("{}:{}", "watcher", std::to_string(get_busy_percent()));
+        return fmt::format("{}:{} total_idle:{} total_busy:{} total_waiting_data:{} total_waiting_value:{} total_waiting_task:{} ", "watcher", std::to_string(get_busy_percent()),
+                           total_idle,
+                           total_busy,
+                           total_idle_no_watcher_data,
+                           total_idle_no_value,
+                           total_idle_no_task);
     }
     std::string get_internal_size() const override
     {
-        auto r = fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {}", "watcher",m_id,
+        auto r = fmt::format("name w_v w_d w_p in_ in_m out_m out_s out_write\n {}-{} {} {} {} {} {} {} {} {}", "watcher", m_id,
                              waiting_value_watcher_queue.size(),
                              waiting_read_watcher_queue.size(),
                              waiting_process_queue.size(),

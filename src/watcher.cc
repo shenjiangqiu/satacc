@@ -2,9 +2,9 @@
 #include <ptr_copy.hpp>
 watcher::watcher(uint64_t &t) : componet(t)
 {
-    m_id=global_id++;
+    m_id = global_id++;
 }
-int watcher::global_id=0;
+int watcher::global_id = 0;
 watcher::~watcher()
 {
 }
@@ -21,6 +21,28 @@ bool watcher::do_cycle()
     busy |= from_read_watcher_to_mem();
     busy |= from_in_to_read();
     busy |= from_resp_to_insider();
+    if (!busy)
+    {
+        //the reason of ideal
+        total_idle++;
+        if (outgoing_read_watcher_data)
+        {
+            total_idle_no_watcher_data++;
+        }
+        else if (outgoing_read_watcher_value)
+        {
+            total_idle_no_value++;
+        }
+        else
+        {
+            assert(in_task_queue.empty());
+            total_idle_no_task++;
+        }
+    }
+    else
+    {
+        total_busy++;
+    }
 
     return busy;
 }
@@ -38,7 +60,7 @@ bool watcher::from_value_to_out_mem()
         //FIXME
         out_memory_read_queue.push_back(copy_unit_ptr(waiting_value_watcher_queue.front()));
         out_memory_read_queue.back()->type = AccessType::ReadWatcherValue;
-
+        outgoing_read_watcher_value++;
         current_size += 1;
         if (current_size >= total_size)
         {
@@ -108,9 +130,10 @@ bool watcher::from_read_watcher_to_mem()
         {
             busy = true;
 
-            //FIXME
             out_memory_read_queue.push_back(copy_unit_ptr(waiting_read_watcher_queue.front()));
             out_memory_read_queue.back()->type = AccessType::ReadWatcherData;
+            outgoing_read_watcher_data++;
+
             current_size += 16;
             if (current_size >= total_size) //in case the total size is 0
             {
@@ -149,6 +172,8 @@ bool watcher::from_resp_to_insider()
         //into waiting_value_watcher_queue
         if (type == AccessType::ReadWatcherData and waiting_value_watcher_queue.size() < value_size)
         {
+            outgoing_read_watcher_data--;
+            assert((int)outgoing_read_watcher_data >= 0);
             if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 //FIXME
@@ -161,6 +186,8 @@ bool watcher::from_resp_to_insider()
         //into waiting_process_queue
         else if (type == AccessType::ReadWatcherValue and waiting_process_queue.size() < process_size)
         {
+            outgoing_read_watcher_value--;
+            assert(outgoing_read_watcher_value < 200);
             if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 waiting_process_queue.push_back(std::move(in_memory_resp_queue.front()));
