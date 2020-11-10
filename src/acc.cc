@@ -85,6 +85,31 @@ void acc::add_hook_from_watcher_out_actions()
                     }
                 }
                 //send private cache to cache//to private cache!!
+                else if (watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherMetaData)
+                {
+                    auto source = watcher_id;
+                    if (m_icnt->has_buffer(MEM_L2, source))
+                    {
+                        busy = true;
+                        assert(watchers[watcher_id]->out_memory_read_queue.front()->as != nullptr);
+                        auto &req = watchers[watcher_id]->out_memory_read_queue.front();
+
+                        assert(req->type == AccessType::ReadWatcherMetaData);
+                        //error here
+                        //m_cache_interface->in_request_queue.push_back(std::move(req));
+                        //m_cache_interface->in_request_queue.back()->ComponentId = watcher_id;
+                        //now push to icnt
+                        req->ComponentId = watcher_id;
+#ifdef SJQ_ICNT_DEBUG
+                        std::cout << "from watcher to icnt: " << i << std::endl;
+                        std::cout << *req << std::endl;
+
+#endif
+                        m_icnt->in_reqs[source].push_back(std::move(req));
+
+                        watchers[watcher_id]->out_memory_read_queue.pop_front();
+                    }
+                }
                 else
                 {
                     assert(watchers[watcher_id]->out_memory_read_queue.front()->type == AccessType::ReadWatcherValue);
@@ -459,6 +484,10 @@ void acc::add_hook_from_icnt_to_other()
                         std::cout << *req << std::endl;
 #endif
                         m_private_caches[i]->in_resp.push_back(std::move(req));
+                    }
+                    else if (req->type == AccessType::ReadWatcherMetaData)
+                    {
+                        watcher_unit->in_memory_resp_queue.push_back(std::move(req));
                     }
                     else
                     {

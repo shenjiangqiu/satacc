@@ -16,6 +16,7 @@ namespace sjq
 bool watcher::do_cycle()
 {
     bool busy = false;
+    busy |= from_watcher_meta_to_memory();
     busy |= from_value_to_out_mem();
     busy |= from_process_to_out();
     busy |= from_read_watcher_to_mem();
@@ -143,10 +144,21 @@ bool watcher::from_read_watcher_to_mem()
     }
     return busy;
 }
+//need add a new pipeline that access the metadata.
 bool watcher::from_in_to_read()
 {
+    //in: the new litreal, we need to get the watcher list addr. and then to get the watchers inside the watcher list.
     bool busy = false;
+    if (!in_task_queue.empty())
+    {
+        auto &req = in_task_queue.front();
+        req->type = AccessType::ReadWatcherMetaData;
 
+        waiting_read_meta_queue.push_back(std::move(req));
+        in_task_queue.pop_front();
+        busy = true;
+    }
+    /*
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
         busy = true;
@@ -156,6 +168,22 @@ bool watcher::from_in_to_read()
         assert(waiting_read_watcher_queue.back()->as != nullptr);
         in_task_queue.pop_front();
     }
+    */
+    return busy;
+}
+bool watcher::from_watcher_meta_to_memory()
+{
+    bool busy = false;
+    if (!waiting_read_meta_queue.empty())
+    {
+        auto &req = waiting_read_meta_queue.front();
+        req->type = AccessType::ReadWatcherMetaData;
+        req->watcherId = 0;
+        out_memory_read_queue.push_back(std::move(req));
+        waiting_read_meta_queue.pop_front();
+        busy = true;
+    }
+
     return busy;
 }
 bool watcher::from_resp_to_insider()
@@ -165,36 +193,52 @@ bool watcher::from_resp_to_insider()
     if (!in_memory_resp_queue.empty())
     {
         busy = true;
-
-        auto &type = in_memory_resp_queue.front()->type;
-        auto &index = in_memory_resp_queue.front()->watcherId;
-        auto &as = in_memory_resp_queue.front()->as;
+        auto &req = in_memory_resp_queue.front();
+        auto &type = req->type;
+        auto &index = req->watcherId;
+        auto &as = req->as;
         //into waiting_value_watcher_queue
-        if (type == AccessType::ReadWatcherData and waiting_value_watcher_queue.size() < value_size)
+        if (type == AccessType::ReadWatcherData)
         {
             outgoing_read_watcher_data--;
             assert((int)outgoing_read_watcher_data >= 0);
             if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 //FIXME
-                waiting_value_watcher_queue.push_back(std::move(in_memory_resp_queue.front()));
+                waiting_value_watcher_queue.push_back(std::move(req));
                 waiting_value_watcher_queue.back()->watcherId = 0; //reset to zero
                 //
             }
+            //for others , just delete it.
             in_memory_resp_queue.pop_front();
         }
         //into waiting_process_queue
-        else if (type == AccessType::ReadWatcherValue and waiting_process_queue.size() < process_size)
+        else if (type == AccessType::ReadWatcherValue)
         {
             outgoing_read_watcher_value--;
             assert(outgoing_read_watcher_value < 200);
             if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {
-                waiting_process_queue.push_back(std::move(in_memory_resp_queue.front()));
+                waiting_process_queue.push_back(std::move(req));
                 waiting_process_queue.back()->watcherId = 0;
                 //
             }
             in_memory_resp_queue.pop_front();
+        }
+        else if (type == AccessType::ReadWatcherMetaData)
+        {
+            busy = true;
+
+            req->watcherId = 0;
+            req->type = AccessType::ReadWatcherData;
+            waiting_read_watcher_queue.push_back(std::move(req));
+
+            assert(waiting_read_watcher_queue.back()->as != nullptr);
+            in_memory_resp_queue.pop_front();
+        }
+        else
+        {
+            throw;
         }
     }
     return busy;
