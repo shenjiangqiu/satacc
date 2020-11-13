@@ -20,7 +20,7 @@ target_compile_definitions(satacc PUBLIC SJQ_ICNT_DEBUG)
 endif()
 target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt 
 sjqcache dramsim3 minisat_utiles mem_req_interface sjqutils)
-target_link_libraries(satacc PUBLIC intersim2 new_intersim)
+target_link_libraries(satacc PUBLIC intersim2 new_intersim ramulator)
 add_subdirectory(test_utils)
 add_subdirectory(test)
 add_subdirectory(simple_test)

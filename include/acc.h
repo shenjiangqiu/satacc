@@ -17,8 +17,9 @@
 #include "private_cache.h"
 #include "watcher_list_write_unit.h"
 #include "clause_writer.h"
-#include <sjq_intersim.h>
+
 #include <new_intersim_wrapper.h>
+#include<ramulator_wrapper.h>
 namespace sjq
 {
     extern bool inside_busy;
@@ -36,6 +37,7 @@ private:
     unsigned num_watchers;
     unsigned num_clauses;
     unsigned num_partition;
+    std::string dram_config_file;
 
     std::vector<std::function<bool()>> clock_passes;
     std::vector<componet *> m_componets;

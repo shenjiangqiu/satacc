@@ -7,3 +7,4 @@ n_clauses=16
 ideal_memory=false
 ideal_l3cache=false
 multi_port=1
+dram_config=DDR4-config.cfg

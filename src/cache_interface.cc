@@ -1,12 +1,12 @@
 #include "cache_interface.h"
 #include "component.h"
 #include <functional>
-#include <icnt_wrapper.h>
+
 #include <enumerate.h>
 #include <req_addr.h>
 
-cache_interface::cache_interface(unsigned int total_size, unsigned num_partition, bool ideal_dram, bool ideal_l3, unsigned num_ports,
-                                 uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, num_partition, ideal_dram, ideal_l3, num_ports, t)
+cache_interface::cache_interface(unsigned int total_size, unsigned num_partition, bool ideal_dram, bool ideal_l3, unsigned num_ports, std::string config_name,
+                                 uint64_t &t) : cache_interface(16, total_size >> 10, 192, 4, num_partition, ideal_dram, ideal_l3, num_ports, config_name, t)
 {
 }
 
@@ -135,7 +135,7 @@ bool cache_interface::from_miss_q_to_dram()
         return false;
     }
     bool busy = false;
-    bool is_write = !miss_queue.front().first;
+    bool is_read = miss_queue.front().first;
     if (is_ideal_dram)
     {
         dram_resp_queue.push_back(miss_queue.front().second);
@@ -144,12 +144,12 @@ bool cache_interface::from_miss_q_to_dram()
         return busy;
     }
     //the tuple: first means is read, second is the address.
-    if (!miss_queue.empty() and m_mem.WillAcceptTransaction(miss_queue.front().second, is_write))
+    if (!miss_queue.empty())
     {
         busy = true;
         auto addr = miss_queue.front().second;
         miss_queue.pop_front();
-        m_mem.AddTransaction(addr, is_write);
+        m_mem.send(addr, is_read);
     }
     return busy;
 }
@@ -253,11 +253,14 @@ std::string cache_interface::get_internal_size() const
                            in_request_queues[i].size(),
                            out_resp_queues[i].size());
     }
-    return ret + fmt::format("name addr_to_req missq dram_r  \n {} {} {} {}\n",
-                             "cache_interface:",
-                             addr_to_req.size(),
-                             miss_queue.size(),
-                             dram_resp_queue.size());
+
+    ret += fmt::format("name addr_to_req missq dram_r  \n {} {} {} {}\n",
+                       "cache_interface:",
+                       addr_to_req.size(),
+                       miss_queue.size(),
+                       dram_resp_queue.size());
+    ret += m_mem.get_internal_size();
+    return ret;
 }
 bool cache_interface::empty() const
 {
@@ -266,7 +269,7 @@ bool cache_interface::empty() const
     {
         empty = empty and delay_resp_queues[i].empty() and in_request_queues[i].empty() and out_resp_queues[i].empty();
     }
-    return empty and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty();
+    return empty and addr_to_req.empty() and miss_queue.empty() and dram_resp_queue.empty() and m_mem.empty();
 }
 
 bool cache_interface::recieve_rdy(unsigned partition_id) const
@@ -282,6 +285,7 @@ cache_interface::cache_interface(int cache_set_assositive,
                                  bool tis_ideal_memory,
                                  bool ideal_l3,
                                  unsigned num_ports,
+                                 std::string config_name,
                                  uint64_t &t) : componet(t),
                                                 m_caches(num_partition,
                                                          sjq::cache(cache_set_assositive,
@@ -290,10 +294,7 @@ cache_interface::cache_interface(int cache_set_assositive,
                                                                     cache_mshr_entries,
                                                                     cache_mshr_maxmerge,
                                                                     "l3cache")),
-                                                m_mem(
-                                                    "DDR4_4Gb_x16_2133_2.ini", "./",
-                                                    [this](uint64_t addr) { read_call_back(addr); },
-                                                    [this](uint64_t addr) { write_call_back(addr); }),
+                                                m_mem(config_name, 64, t),
                                                 n_partition(num_partition),
                                                 delay_resp_queues(num_partition),
                                                 is_ideal_dram(tis_ideal_memory),
@@ -303,6 +304,7 @@ cache_interface::cache_interface(int cache_set_assositive,
                                                 out_resp_queues(num_partition)
 
 {
+
     //m_mem("DDR4_4Gb_x16_2133_2.ini", "./", std::bind(read_call_back, std::placeholders::_1), std::bind(write_call_back, std::placeholders::_1));
 }
 cache_interface::~cache_interface() {}
@@ -310,8 +312,12 @@ bool cache_interface::do_cycle()
 {
     bool busy = false;
     //current_cycle++;
-    m_mem.ClockTick();
-
+    busy |= m_mem.cycle();
+    while (m_mem.return_avaliable())
+    {
+        auto addr = m_mem.pop();
+        dram_resp_queue.push_back(addr);
+    }
     //from in to resp or missq
     busy |= from_delayresp_to_out();
     busy |= from_dramresp_to_resp();

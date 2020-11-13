@@ -661,6 +661,14 @@ void acc::parse_file()
             multi_l3cache_port = 1;
         }
     }
+    if (acc_config.count("dram_config"))
+    {
+        dram_config_file = acc_config["dram_config"];
+    }
+    else
+    {
+        dram_config_file = "DDR4-config.cfg";
+    }
 }
 
 acc::acc(unsigned t_num_watchers,
@@ -680,7 +688,7 @@ acc::acc(unsigned t_num_watchers,
 
     // add the componets s
 
-    m_cache_interface = new cache_interface(l3_cache_size, num_partition, ideal_memory, ideal_l3cache, multi_l3cache_port, current_cycle);
+    m_cache_interface = new cache_interface(l3_cache_size, num_partition, ideal_memory, ideal_l3cache, multi_l3cache_port, dram_config_file, current_cycle);
     m_componets.push_back(m_cache_interface);
     m_watcher_write_unit = new watcher_list_write_unit(current_cycle);
     m_clause_write_unit = new clause_writer(current_cycle);

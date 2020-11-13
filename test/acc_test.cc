@@ -14,7 +14,7 @@ TEST_CASE("acc", "[advanced][core][componet]")
         auto as = generate_wrap();
         auto req = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData, 0, 0, 0, as);
         m_acc.in_m_trail.push_back(std::move(req));
-        bool print = false;
+        bool print = true;
         while (!m_acc.empty())
         {
             //std::cout << m_acc.get_internal_size() << std::endl;

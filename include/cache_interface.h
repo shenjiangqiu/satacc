@@ -6,7 +6,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include "memory_system.h"
+
 #include <tuple>
 #include "component.h"
 #include <fmt/format.h>
@@ -14,6 +14,7 @@
 #include <mem_req_interface.h>
 #include <addr_utiles.h>
 #include <enumerate.h>
+#include <ramulator_wrapper.h>
 //use template to avoid expesive divide calculate
 class cache_stats
 {
@@ -88,7 +89,7 @@ private:
     unsigned miss_size = 64;
     unsigned in_size = 64;
     std::vector<sjq::cache> m_caches;
-    dramsim3::MemorySystem m_mem;
+    ramulator_wrapper m_mem;
     unsigned n_partition;
     std::map<uint64_t, std::vector<req_ptr>> addr_to_req; //global,
 
@@ -125,7 +126,7 @@ public:
     bool empty() const override;
 
     bool recieve_rdy(unsigned partition_id) const;
-    cache_interface(unsigned int total_size, unsigned num_partion, bool ideal_dram, bool ideal_l3, unsigned num_ports,
+    cache_interface(unsigned int total_size, unsigned num_partion, bool ideal_dram, bool ideal_l3, unsigned num_ports, std::string mem_config_name,
                     uint64_t &t);
     cache_interface(int cache_set_assositive,
                     int cache_num_sets,
@@ -135,6 +136,7 @@ public:
                     bool,
                     bool,
                     unsigned,
+                    std::string,
                     uint64_t &t);
     ~cache_interface();
 
