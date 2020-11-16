@@ -92,7 +92,9 @@ private:
     ramulator_wrapper m_mem;
     unsigned n_partition;
     std::map<uint64_t, std::vector<req_ptr>> addr_to_req; //global,
-
+    std::vector<bool> this_busy;
+    std::vector<unsigned long long> busys;
+    std::vector<unsigned long long> idles;
     std::vector<std::deque<std::pair<uint64_t, req_ptr>>> delay_resp_queues; //multiple queue
 
     //ture=read, false=write
@@ -113,6 +115,7 @@ private:
     void write_call_back(uint64_t);
 
     std::array<uint64_t, (int)AccessType::max> access_hist = {0};
+    std::vector<std::array<uint64_t, (int)AccessType::max>> access_hists;
     bool is_ideal_dram;
     bool ideal_l3;
     unsigned num_ports;

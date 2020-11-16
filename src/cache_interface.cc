@@ -34,6 +34,7 @@ bool cache_interface::from_in_to_cache()
         while (!in_request_queue.empty() and miss_queue.size() < miss_size and remain_ports-- > 0)
         {
             busy = true;
+            this_busy[i] = true;
 
             //step one: get addr for this request.
 
@@ -56,6 +57,7 @@ bool cache_interface::from_in_to_cache()
             uint64_t addr = 0;
             auto cache_type = sjq::cache::read;
             access_hist[(int)type]++;
+            access_hists[i][(int)type]++;
 
             addr = get_addr_by_req(req);
             if (req->type == AccessType::WriteClause or req->type == AccessType::WriteWatcherList or req->type == AccessType::EvictWrite)
@@ -190,6 +192,7 @@ bool cache_interface::from_delayresp_to_out()
     {
         if (!delay_resp_queue.empty())
         {
+            this_busy[i] = true;
             busy = true;
             if (current_cycle > delay_resp_queue.front().first + cache_delay)
             {
@@ -218,10 +221,11 @@ unsigned cache_interface::get_partition_id(uint64_t addr)
 std::string cache_interface::get_line_trace() const
 {
     std::string ret;
-    for (auto &m_cache : m_caches)
+    ret += fmt::format("\n{}:{}\n", "cache_interface", get_busy_percent());
+    for (int i = 0; i < n_partition; i++)
     {
-        auto c = *m_cache.get_stats();
-        ret += (fmt::format("\n{}:{}\n", "cache_interface", get_busy_percent()) +
+        auto c = *m_caches[i].get_stats();
+        ret += (fmt::format("\n{}:{} {} {}\n", "cache_interface", busys[i], idles[i], (double)busys[i] / (double)(busys[i] + idles[i])) +
                 fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail {} \n",
                             c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail) +
                 fmt::format("the_hist {}\n", access_hist));
@@ -296,7 +300,11 @@ cache_interface::cache_interface(int cache_set_assositive,
                                                                     "l3cache")),
                                                 m_mem(config_name, 64, t),
                                                 n_partition(num_partition),
+                                                this_busy(num_partition, false),
+                                                busys(num_partition, 0),
+                                                idles(num_partition, 0),
                                                 delay_resp_queues(num_partition),
+                                                access_hists(n_partition, {0}),
                                                 is_ideal_dram(tis_ideal_memory),
                                                 ideal_l3(ideal_l3),
                                                 num_ports(num_ports),
@@ -311,6 +319,7 @@ cache_interface::~cache_interface() {}
 bool cache_interface::do_cycle()
 {
     bool busy = false;
+    std::fill(this_busy.begin(), this_busy.end(), false); //fill all to not busy;
     //current_cycle++;
     busy |= m_mem.cycle();
     while (m_mem.return_avaliable())
@@ -323,6 +332,17 @@ bool cache_interface::do_cycle()
     busy |= from_dramresp_to_resp();
     busy |= from_miss_q_to_dram();
     busy |= from_in_to_cache();
+    for (int i = 0; i < n_partition; i++)
+    {
+        if (this_busy[i])
+        {
+            busys[i]++;
+        }
+        else
+        {
+            idles[i]++;
+        }
+    }
 
     return busy;
     //from missq to dram
