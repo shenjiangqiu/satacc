@@ -19,7 +19,7 @@
 #include "clause_writer.h"
 
 #include <new_intersim_wrapper.h>
-#include<ramulator_wrapper.h>
+#include <ramulator_wrapper.h>
 namespace sjq
 {
     extern bool inside_busy;
@@ -38,7 +38,7 @@ private:
     unsigned num_clauses;
     unsigned num_partition;
     std::string dram_config_file;
-
+    //std::string watcher_icnt;
     std::vector<std::function<bool()>> clock_passes;
     std::vector<componet *> m_componets;
     std::vector<watcher *> watchers;
@@ -58,6 +58,8 @@ private:
     //all the componets are owned by m_componnets
     //
 
+    icnt_base* watcher_icnt;
+    bool from_watcher_icnt_out();
     void init_watcher_and_clause();
     void add_hook_from_watcher_out_actions();
     void add_hook_from_clause_to_mem();

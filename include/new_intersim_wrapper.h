@@ -16,16 +16,22 @@ class icnt_base : public componet
     using req_ptr = std::unique_ptr<cache_interface_req>;
     using req_ptr_q = std::deque<req_ptr>;
     using req_ptr_q_vec = std::vector<req_ptr_q>;
+    bool route_watcher;
 
 public:
     //interfaces
+    bool is_route_watcher() const
+    {
+        return route_watcher;
+    }
     req_ptr_q_vec in_reqs;
     req_ptr_q_vec out_reqs;
     req_ptr_q_vec in_resps;
     req_ptr_q_vec out_resps;
     icnt_base(uint64_t &current_cycle,
               unsigned num_core,
-              unsigned num_mem);
+              unsigned num_mem,
+              bool route_watcher = false);
     virtual bool has_pkg_in_icnt() const = 0;
     virtual bool has_buffer(int level, unsigned source) const = 0;
     virtual ~icnt_base() {}
@@ -75,7 +81,8 @@ public:
               int link_latency,
               int arbitration_policy,
               int link_width,
-              int num_vc_cpu);
+              int num_vc_cpu,
+              bool route_watcher = false);
     //we don't want some global variable to init twice
     icnt_ring() = delete;
     icnt_ring(const icnt_ring &) = delete;
@@ -109,7 +116,8 @@ public:
     icnt_ideal(uint64_t &current_cycle,
                unsigned num_cores,
                unsigned num_mems,
-               unsigned num_clauses);
+               unsigned num_clauses,
+               bool route_watcher = false);
     //we don't want some global variable to init twice
     icnt_ideal() = delete;
     icnt_ideal(const icnt_ideal &) = delete;
@@ -163,7 +171,8 @@ public:
               int link_latency,
               int arbitration_policy,
               int link_width,
-              int num_vc_cpu);
+              int num_vc_cpu,
+              bool route_watcher = false);
     //we don't want some global variable to init twice
     icnt_mesh() = delete;
     icnt_mesh(const icnt_mesh &) = delete;

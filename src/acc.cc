@@ -34,6 +34,20 @@ void acc::init_watcher_and_clause()
     }
 }
 
+bool acc::from_watcher_icnt_out()
+{
+
+    for (auto i = 0; i < num_clauses; i++)
+    {
+        if (!watcher_icnt->out_reqs[i].empty())
+        {
+            auto &req = watcher_icnt->out_reqs[i].front();
+            clauses[i]->in_task_queue.push_back(std::move(req));
+            watcher_icnt->out_reqs[i].pop_front();
+        }
+    }
+}
+
 void acc::add_hook_from_watcher_out_actions()
 {
     //handle from watchers to clauses, and from watchers to memory
@@ -49,10 +63,10 @@ void acc::add_hook_from_watcher_out_actions()
             //bug here , ii will be shared across all the lambda!!!!!
             //ii = (ii + 1) % (num_clauses / num_watchers);
             //send the request to clause unit
-            if (!watchers.at(watcher_id)->out_send_queue.empty() and clauses.at(clause_id)->recieve_rdy())
+            if (!watchers.at(watcher_id)->out_send_queue.empty() and watcher_icnt->in_reqs[watcher_id].size() < 64)
             {
                 busy = true;
-                clauses[clause_id]->in_task_queue.push_back(std::move(watchers[watcher_id]->out_send_queue.front()));
+                watcher_icnt->in_reqs[watcher_id].push_back(std::move(watchers[watcher_id]->out_send_queue.front()));
                 watchers[watcher_id]->out_send_queue.pop_front();
             }
 
@@ -555,7 +569,19 @@ acc::acc(unsigned t_num_watchers,
 
 void acc::parse_file()
 {
-    std::string input_file_name = "satacc_config.txt";
+    const std::map<std::string, std::set<std::string>> all_settings = {
+        {"n_watchers", {}},
+        {"n_clauses", {}},
+        {"mems", {}},
+        {"icnt", {"mesh", "ideal", "ring"}},
+        {"seq", {"true", "false"}},
+        {"ideal_memory", {"true", "false"}},
+        {"ideal_l3cache", {"true", "false"}},
+        {"multi_port", {}},
+        {"dram_config", {"ALDRAM-config.cfg", "DDR4-config.cfg", "GDDR5-config.cfg", "LPDDR3-config.cfg", "PCM-config.cfg", "STTMRAM-config.cfg", "WideIO2-config.cfg", "DDR3-config.cfg", "DSARP-config.cfg", "HBM-config.cfg", "LPDDR4-config.cfg", "SALP-config.cfg", "TLDRAM-config.cfg", "WideIO-config.cfg"}},
+        {"watcher_icnt", {"mesh", "ideal", "ring"}}};
+
+    const std::string input_file_name = "satacc_config.txt";
     std::ifstream in(input_file_name);
     std::string icnt_type;
     std::map<std::string, std::string> acc_config;
@@ -584,90 +610,88 @@ void acc::parse_file()
     {
         std::cout << fmt::format("{},{}\n", config.first, config.second);
     }
-    if (acc_config.count("n_watchers"))
+    //fisrt, valide the count
+    if (!acc_config.size() == all_settings.size())
     {
-        num_watchers = std::stoul(acc_config["n_watchers"]);
+        throw std::runtime_error("the number of settings are not equal");
     }
-    else
+    for (auto &&config : acc_config)
     {
-        num_watchers = 16;
+        if (!all_settings.count(config.first))
+        {
+            throw std::runtime_error("no such setting!");
+        }
+        if (!all_settings.at(config.first).empty() and !all_settings.at(config.first).count(config.second))
+        {
+            throw std::runtime_error("no such value!");
+        }
     }
-    num_clauses = acc_config.count("n_clauses") ? std::stoul(acc_config["n_clauses"]) : num_watchers;
+
+    num_watchers = std::stoul(acc_config["n_watchers"]);
+
+    num_clauses = std::stoul(acc_config["n_clauses"]);
 
     //parse the number of mem partition
     unsigned num_mem;
-    if (acc_config.count("mems"))
-    {
-        num_mem = std::stoul(acc_config["mems"]);
-    }
-    else
-    {
-        num_mem = 8;
-    }
+
+    num_mem = std::stoul(acc_config["mems"]);
+
     num_partition = num_mem;
     //parse the icnt type
-    if (acc_config.count("icnt"))
-    {
-        auto icnt = acc_config["icnt"];
-        if (icnt == "mesh")
-        {
-            m_icnt = new icnt_mesh(current_cycle,
-                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
-        }
-        else if (icnt == "ring")
-        {
-            m_icnt = new icnt_ring(current_cycle,
-                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
-        }
-        else if (icnt == "ideal")
-        {
-            m_icnt = new icnt_ideal(current_cycle, num_watchers, num_mem, num_clauses);
-        }
-        else
-        {
-            m_icnt = new icnt_mesh(current_cycle,
-                                   num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
-        }
-    }
 
-    if (acc_config.count("seq"))
+    auto icnt = acc_config["icnt"];
+    if (icnt == "mesh")
     {
-        enable_sequential = acc_config["seq"] == "true" ? true : false;
+        m_icnt = new icnt_mesh(current_cycle,
+                               num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
     }
-
-    if (acc_config.count("ideal_memory"))
+    else if (icnt == "ring")
     {
-        if (acc_config["ideal_memory"] == "true")
-        {
-            ideal_memory = true;
-        }
+        m_icnt = new icnt_ring(current_cycle,
+                               num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
     }
-    if (acc_config.count("ideal_l3cache"))
+    else if (icnt == "ideal")
     {
-        if (acc_config["ideal_l3cache"] == "true")
-        {
-            ideal_l3cache = true;
-        }
-    }
-    if (acc_config.count("multi_port"))
-    {
-        auto number = std::stoul(acc_config["multi_port"]);
-        if (number > 1)
-        {
-            multi_l3cache_port = number;
-        }
-        else
-        {
-            multi_l3cache_port = 1;
-        }
-    }
-    if (acc_config.count("dram_config"))
-    {
-        dram_config_file = acc_config["dram_config"];
+        m_icnt = new icnt_ideal(current_cycle, num_watchers, num_mem, num_clauses);
     }
     else
     {
-        dram_config_file = "DDR4-config.cfg";
+        m_icnt = new icnt_mesh(current_cycle,
+                               num_watchers, num_mem, num_clauses, 3, 1, 0, 64, 3);
+    }
+    enable_sequential = acc_config["seq"] == "true" ? true : false;
+    ideal_memory = acc_config["ideal_memory"] == "true" ? true : false;
+    ideal_l3cache = acc_config["ideal_l3cache"] == "true" ? true : false;
+
+    auto number = std::stoul(acc_config["multi_port"]);
+    if (number > 1)
+    {
+        multi_l3cache_port = number;
+    }
+    else
+    {
+        multi_l3cache_port = 1;
+    }
+
+    dram_config_file = acc_config["dram_config"];
+    auto watcher_icnt_s = acc_config["watcher_icnt"];
+    if (watcher_icnt_s == "mesh")
+    {
+        watcher_icnt = new icnt_mesh(current_cycle,
+                                     num_watchers, num_clauses, num_clauses, 3, 1, 0, 64, 3, true);
+    }
+    else if (watcher_icnt_s == "ring")
+    {
+        watcher_icnt = new icnt_ring(current_cycle,
+                                     num_watchers, num_clauses, num_clauses, 3, 1, 0, 64, 3, true);
+    }
+    else if (watcher_icnt_s == "ideal")
+    {
+        watcher_icnt = new icnt_ideal(current_cycle, num_watchers, num_clauses, num_clauses, true);
+    }
+    else
+    {
+        throw;
     }
 }
 

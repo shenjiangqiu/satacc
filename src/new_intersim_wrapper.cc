@@ -83,15 +83,16 @@ icnt_ring::icnt_ring(uint64_t &current_cycle,
                      int link_latency,
                      int arbitration_policy,
                      int link_width,
-                     int num_vc_cpu) : icnt_base(current_cycle, num_cores, num_mem),
-                                       m_ring_network(current_cycle,
-                                                      num_vc, link_latency,
-                                                      arbitration_policy,
-                                                      link_width,
-                                                      num_vc_cpu),
-                                       n_cores(num_cores),
-                                       n_mems(num_mem),
-                                       n_clauses(num_clauses)
+                     int num_vc_cpu,
+                     bool route_watcher) : icnt_base(current_cycle, num_cores, num_mem, route_watcher),
+                                           m_ring_network(current_cycle,
+                                                          num_vc, link_latency,
+                                                          arbitration_policy,
+                                                          link_width,
+                                                          num_vc_cpu),
+                                           n_cores(num_cores),
+                                           n_mems(num_mem),
+                                           n_clauses(num_clauses)
 {
     //init icnt config
     m_ring_network.init(num_cores, 0, num_mem, 0, 0);
@@ -257,15 +258,16 @@ icnt_mesh::icnt_mesh(uint64_t &current_cycle,
                      int link_latency,
                      int arbitration_policy,
                      int link_width,
-                     int num_vc_cpu) : icnt_base(current_cycle, num_cores, num_mem),
-                                       m_mesh_network(current_cycle,
-                                                      num_vc, link_latency,
-                                                      arbitration_policy,
-                                                      link_width,
-                                                      num_vc_cpu),
-                                       n_cores(num_cores),
-                                       n_mems(num_mem),
-                                       n_clauses(num_clauses)
+                     int num_vc_cpu,
+                     bool route_watcher) : icnt_base(current_cycle, num_cores, num_mem, route_watcher),
+                                           m_mesh_network(current_cycle,
+                                                          num_vc, link_latency,
+                                                          arbitration_policy,
+                                                          link_width,
+                                                          num_vc_cpu),
+                                           n_cores(num_cores),
+                                           n_mems(num_mem),
+                                           n_clauses(num_clauses)
 {
     //init icnt config
     m_mesh_network.init(num_cores, 0, num_mem, 0, 0);
@@ -336,9 +338,18 @@ bool icnt_mesh::do_cycle()
             if (is_has_buffer)
             {
                 busy = true;
-                auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
+                int dest = 0;
+                if (is_route_watcher())
+                {
+                    dest = req->as->get_clause_id(req->watcherId) % n_mems;
+                }
+                else
+                {
+                    dest = get_partition_id_by_addr(get_addr_by_req(req), n_mems);
+                }
+
                 //auto dest = mem_partition_id;
-                push_into_inct(true, source, mem_partition_id, std::move(req));
+                push_into_inct(true, source, dest, std::move(req));
                 q.pop_front();
             }
         }
@@ -346,6 +357,8 @@ bool icnt_mesh::do_cycle()
 
     for (auto &&[i, q] : enumerate(in_resps))
     {
+        if (is_route_watcher())
+            throw;
         //from mem to cores
 
         if (!q.empty())
@@ -474,8 +487,8 @@ bool icnt_ideal::empty() const
     //std::cout<<result<<std::endl;
     return result;
 }
-icnt_ideal::icnt_ideal(uint64_t &current_cycle, unsigned num_cores, unsigned num_mems, unsigned num_clauses)
-    : icnt_base(current_cycle, num_cores, num_mems), n_cores(num_cores), n_mems(num_mems), n_clauses(num_clauses) {}
+icnt_ideal::icnt_ideal(uint64_t &current_cycle, unsigned num_cores, unsigned num_mems, unsigned num_clauses, bool route_watcher)
+    : icnt_base(current_cycle, num_cores, num_mems, route_watcher), n_cores(num_cores), n_mems(num_mems), n_clauses(num_clauses) {}
 
 bool icnt_ideal::do_cycle()
 {
@@ -525,8 +538,10 @@ bool icnt_ideal::do_cycle()
 }
 icnt_base::icnt_base(uint64_t &current_cycle,
                      unsigned int num_core,
-                     unsigned int num_mem) : componet(current_cycle),
-                                             in_reqs(num_core),
-                                             out_reqs(num_mem),
-                                             in_resps(num_mem),
-                                             out_resps(num_core) {}
+                     unsigned int num_mem,
+                     bool route_watcher) : componet(current_cycle),
+                                           route_watcher(route_watcher),
+                                           in_reqs(num_core),
+                                           out_reqs(num_mem),
+                                           in_resps(num_mem),
+                                           out_resps(num_core) {}

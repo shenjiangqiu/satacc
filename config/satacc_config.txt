@@ -1,4 +1,5 @@
 icnt=ideal
+watcher_icnt=mesh
 #icnt=ideal,mesh,ring
 mems=8
 seq=false
