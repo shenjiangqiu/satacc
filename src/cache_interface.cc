@@ -221,14 +221,16 @@ unsigned cache_interface::get_partition_id(uint64_t addr)
 std::string cache_interface::get_line_trace() const
 {
     std::string ret;
-    ret += fmt::format("\n{}:{}\n", "cache_interface", get_busy_percent());
+    ret += fmt::format("\n{}:{}\n", "cache_interface", get_busy_percent()) +
+           "\nReadWatcherData,ReadWatcherValue,ReadWatcherMetaData,ReadClauseData,ReadClauseValue,WriteWatcherList,WriteClause,EvictWrite,WriteMissRead " +
+           fmt::format(" the_hist", access_hist);
     for (int i = 0; i < n_partition; i++)
     {
         auto c = *m_caches[i].get_stats();
         ret += (fmt::format("\n{}:{} {} {}\n", "cache_interface", busys[i], idles[i], (double)busys[i] / (double)(busys[i] + idles[i])) +
                 fmt::format("c.num_hit {} ,c.num_hit_reserved {}  ,c.num_miss {} ,c.num_res_fail {} \n",
                             c.num_hit, c.num_hit_reserved, c.num_miss, c.num_res_fail) +
-                fmt::format("the_hist {}\n", access_hist));
+                fmt::format("the_hist {}\n", access_hists[i]));
     }
 
     ret += fmt::format("\nread_watcher_data_hit {}\nread_watcher_value_hit {}\nread_clause_data_hit {}\nread_clause_value_hit {}\nwrite_watcher_list_hit {}\nwrite_clause_hit {}\nread_watcher_data_miss {}\nread_watcher_value_miss {}\nread_clause_data_miss {}\nread_clause_value_miss {}\nwrite_watcher_list_miss {}\nwrite_clause_miss {}\n",

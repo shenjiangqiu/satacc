@@ -9,7 +9,7 @@ TEST_CASE()
 {
     uint64_t tcurrent_cycle = 0;
     auto m_icnt = new icnt_mesh(tcurrent_cycle,
-                                16, 8, 16, 3, 1, 0, 64, 3);
+                                16, 3, 1, 0, 64, 3);
     global_id = 0;
     auto as1 = new assign_wrap(0, 10, 0, nullptr, 0);
     as1->set_addr(0x00010);
@@ -24,7 +24,7 @@ TEST_CASE()
 
     m_icnt->in_reqs[1].push_back(std::move(req1));
     auto mem_partition = get_partition_id_by_addr(get_addr_by_req(req2), 8);
-    m_icnt->in_resps[mem_partition]
+    m_icnt->in_reqs[mem_partition]
         .push_back(std::move(req2));
     int num_inflight = 2;
     while (true)
@@ -43,13 +43,13 @@ TEST_CASE()
         }
         for (auto i = 0u; i < 16; i++)
         {
-            if (!m_icnt->out_resps[i].empty())
+            if (!m_icnt->out_reqs[i].empty())
             {
-                auto &req = m_icnt->out_resps[i].front();
+                auto &req = m_icnt->out_reqs[i].front();
                 std::cout << "resp out from " << i << std::endl;
                 std::cout << *req << std::endl;
                 num_inflight--;
-                m_icnt->out_resps[i].pop_front();
+                m_icnt->out_reqs[i].pop_front();
             }
         }
         if (num_inflight == 0)

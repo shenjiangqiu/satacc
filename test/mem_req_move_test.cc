@@ -29,7 +29,7 @@ TEST_CASE("mem_req_icnt")
 {
     uint64_t tcurrent_cycle = 0;
     auto m_icnt = new icnt_ring(tcurrent_cycle,
-                               16, 8, 16, 3, 1, 0, 64, 3);
+                               16, 3, 1, 0, 64, 3);
     global_id = 0;
     auto as1 = new assign_wrap(0, 10, 0, nullptr, 0);
     as1->set_addr(0x00010);
@@ -41,7 +41,7 @@ TEST_CASE("mem_req_icnt")
     REQUIRE(req2->mid == 1);
 
     m_icnt->in_reqs[1].push_back(std::move(req1));
-    m_icnt->in_resps[3].push_back(std::move(req2));
+    m_icnt->in_reqs[3].push_back(std::move(req2));
     int num_inflight = 2;
     while (true)
     {

@@ -58,7 +58,6 @@ bool watcher::from_value_to_out_mem()
         assert(total_size != 0);
         auto &current_size = waiting_value_watcher_queue.front()->watcherId;
 
-        //FIXME
         out_memory_read_queue.push_back(copy_unit_ptr(waiting_value_watcher_queue.front()));
         out_memory_read_queue.back()->type = AccessType::ReadWatcherValue;
         outgoing_read_watcher_value++;
@@ -89,19 +88,19 @@ bool watcher::from_process_to_out()
         if (current_size == 0)
         {
             //the first one, generate the new request
-            //FIXME
+
             out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
         }
         else if (current_size == total_size - 1)
         {
-            //FIXME
+
             out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
             //the last one, generate the clean task
         }
 
         if (req->as->is_read_clause(current_size))
         {
-            //FIXME
+
             out_send_queue.push_back(copy_unit_ptr(waiting_process_queue.front()));
             out_send_queue.back()->clauseId = 0;
         }
@@ -133,6 +132,7 @@ bool watcher::from_read_watcher_to_mem()
 
             out_memory_read_queue.push_back(copy_unit_ptr(waiting_read_watcher_queue.front()));
             out_memory_read_queue.back()->type = AccessType::ReadWatcherData;
+            out_memory_read_queue.back()->addr = out_memory_read_queue.back()->as->get_addr() + (current_size * 4);
             outgoing_read_watcher_data++;
 
             current_size += 16;
@@ -162,7 +162,7 @@ bool watcher::from_in_to_read()
     if (!in_task_queue.empty() and waiting_read_watcher_queue.size() < read_size)
     {
         busy = true;
-        //FIXME
+        
         waiting_read_watcher_queue.push_back(std::move(in_task_queue.front()));
         waiting_read_watcher_queue.back()->watcherId = 0;
         assert(waiting_read_watcher_queue.back()->as != nullptr);
@@ -204,7 +204,7 @@ bool watcher::from_resp_to_insider()
             assert((int)outgoing_read_watcher_data >= 0);
             if (index + 16 >= (unsigned)(as->get_watcher_size())) //the last one
             {
-                //FIXME
+
                 waiting_value_watcher_queue.push_back(std::move(req));
                 waiting_value_watcher_queue.back()->watcherId = 0; //reset to zero
                 //
@@ -216,7 +216,7 @@ bool watcher::from_resp_to_insider()
         else if (type == AccessType::ReadWatcherValue)
         {
             outgoing_read_watcher_value--;
-            assert(outgoing_read_watcher_value < 200);
+            assert((int)outgoing_read_watcher_value >= 0);
             if (index + 1 >= (unsigned)(as->get_watcher_size())) //the last one
             {
                 waiting_process_queue.push_back(std::move(req));

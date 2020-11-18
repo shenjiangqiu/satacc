@@ -46,10 +46,9 @@ private:
     std::vector<private_cache *> m_private_caches;
 
     cache_interface *m_cache_interface;
-    watcher_list_write_unit *m_watcher_write_unit;
-    clause_writer *m_clause_write_unit;
+    std::vector<watcher_list_write_unit *> m_watcher_write_unit;
+    std::vector<clause_writer *> m_clause_write_unit;
     //icnt *m_icnt;
-    icnt_base *m_icnt;
     bool enable_sequential = false;
     bool ideal_memory = false;
     bool ideal_l3cache = false;
@@ -57,9 +56,10 @@ private:
     //important
     //all the componets are owned by m_componnets
     //
+    icnt_base *memory_read_icnt;
 
-    icnt_base* watcher_icnt;
-    bool from_watcher_icnt_out();
+    icnt_base *watcher_to_clause_icnt;
+    icnt_base *watcher_to_writer_icnt;
     void init_watcher_and_clause();
     void add_hook_from_watcher_out_actions();
     void add_hook_from_clause_to_mem();
@@ -71,7 +71,13 @@ private:
     void add_hook_from_clause_to_writeuint();
     void add_hook_from_clause_write_unit_to_cache();
     void add_hook_from_watcher_write_unit_to_cache();
+
+    //icnt out
     void add_hook_from_icnt_to_other();
+    void add_hook_from_watcher_icnt_out();
+    void add_hook_from_watcher_icnt_to_watcher_writer();
+
+
 
 public:
     std::string get_internal_size() const override
