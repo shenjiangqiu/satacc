@@ -85,18 +85,10 @@ bool watcher::from_process_to_out()
         auto &current_size = waiting_process_queue.front()->watcherId;
         busy = true;
 
-        if (current_size == 0)
-        {
-            //the first one, generate the new request
+        //the first one, generate the new request
+        assert(req);
+        out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
 
-            out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
-        }
-        else if (current_size == total_size - 1)
-        {
-
-            out_write_watcher_list_queue.push_back(copy_unit_ptr(req));
-            //the last one, generate the clean task
-        }
 
         if (req->as->is_read_clause(current_size))
         {

@@ -16,69 +16,58 @@ bool watcher_list_write_unit::do_cycle()
     bool busy = false;
     if (!in_request.empty())
     {
+        busy = true;
         //busy = true;
         //add current and the other to the map;
         auto req = std::move(in_request.front());
         in_request.pop_front();
+        assert(req);
         auto as = req->as;
         auto watcherId = req->watcherId;
         req->type = AccessType::WriteWatcherList;
         unsigned watcehrSize = as->get_watcher_size();
         assert(watcehrSize != 0);
-        if (watcehrSize == 1)
-        {
-            busy = true;
-            out_mem_requst.push_back(std::move(req));
-        }
-        else if (watcherId == 0)
-        {
-            //is the first, we only count the first, for the simplicity;
-            //to calculate how many access we should have.
-            busy = true;
+        auto value = (as->get_is_push_to_other(req->watcherId) ? as->get_pushed(req->watcherId) : as->get_value());
+        //assert(m_id == value % total_size);
+        assert(m_id == value % total_size);
 
-            for (unsigned i = 0; i < watcehrSize; i++)
+        if (current_map.count(value))
+        {
+            if (current_map[value] < max_merge)
             {
-                //push and evict the map entry;
-                if (as->get_is_push_to_other(i))
-                {
-                    //push to other
-                    //remove other map logic
-                    out_mem_requst.push_back(copy_unit_ptr(req));
-                }
-                else
-                {
-                    //todo implement to merge operation
-                    //push to current watcher list
-                    auto current_assign = as->get_value();
-                    current_map[current_assign]++;
-                    //evict the current size;
-                    if (current_map[current_assign] >= 8)
-                    {
-                        current_map.erase(current_assign);
-                        out_mem_requst.push_back(copy_unit_ptr(req));
-                        evict_current_size_histo[7]++;
-                    }
-                }
+                current_map[value]++;
             }
-        }
-        else if (watcherId == watcehrSize - 1) //evict the current cache //this is the last one!
-        {
-            auto current_assign = as->get_value();
-            //assert(current_map[current_assign] > 0);
-            if (current_map.count(current_assign))
+            else
             {
-                busy = true;
-                auto size = current_map[current_assign];
-                assert(size >= 0);
-
-                current_map.erase(current_assign);
                 out_mem_requst.push_back(std::move(req));
-                evict_current_size_histo[size - 1]++;
+                current_map.erase(value);
+                current_req.erase(value);
             }
         }
-        else //other index shouldn't be here
+        else
         {
-            throw;
+            //add this new entry
+            if (current_map.size() >= max_entry)
+            { //need to evict one entry;
+                while (!current_req.count(entry_aging_queue.front()))
+                {
+                    entry_aging_queue.pop();
+                }
+                auto oldest_entry = entry_aging_queue.front();
+
+                entry_aging_queue.pop();
+                auto &evict = current_req.at(oldest_entry);
+                assert(evict);
+                out_mem_requst.push_back(std::move(evict));
+                current_req.erase(oldest_entry);
+                current_map.erase(oldest_entry);
+            }
+            //add this new entry
+            entry_aging_queue.push(value);
+
+            current_map.insert({value, 1});
+            assert(req);
+            current_req.insert({value, std::move(req)});
         }
     }
     return busy;

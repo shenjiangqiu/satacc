@@ -208,7 +208,8 @@ bool icnt_mesh::do_cycle()
             assert(req);
             //q.pop_front();
             auto source = req->icnt_from;
-            assert(source == i);
+            assert(source != req->icnt_to);
+            assert((size_t)source == i);
             auto is_has_buffer = has_buffer(source);
 
             if (is_has_buffer)
@@ -249,7 +250,8 @@ void icnt_mesh::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<c
 
     current_inflight_pkg.insert(req.get());
     //icnt_push(source, dest, (void *)req.release(), size); //give the ownership
-    m_mesh_network.send(req.release(), source, dest);
+    auto result = m_mesh_network.send(req.release(), source, dest);
+    assert(result);
 }
 
 bool icnt_ideal::has_pkg_in_icnt() const
@@ -259,7 +261,7 @@ bool icnt_ideal::has_pkg_in_icnt() const
 bool icnt_ideal::has_buffer(unsigned int source) const
 {
     bool result;
-    result = in_reqs.size() < 16;
+    result = in_reqs[source].size() < 16;
     return result;
 }
 std::string icnt_ideal::get_internal_size() const

@@ -55,10 +55,44 @@ private:
 
     //the map: the map for the running watcher list to merge the write request.
     std::map<int, int> current_map;
+    std::map<int, req_ptr> current_req;
+    //from value to send addr
     std::array<uint64_t, 8> evict_current_size_histo = {0};
+    std::queue<int> entry_aging_queue;
+    int max_merge;
+    int max_entry;
+    int total_size;
+    int m_id = 0;
 
 public:
-    watcher_list_write_unit(uint64_t &ct) : componet(ct) {}
+    void flush()
+    {
+        while (!entry_aging_queue.empty())
+            entry_aging_queue.pop();
+        for (auto &&req_t : current_req)
+        {
+            auto &req = req_t.second;
+            out_mem_requst.push_back(std::move(req));
+        }
+        current_req.clear();
+        current_map.clear();
+    }
+    bool is_flushed() const
+    {
+        return current_req.empty() and current_map.empty() and entry_aging_queue.empty();
+    }
+    watcher_list_write_unit(uint64_t &ct,
+                            int max_merge,
+                            int max_entry,
+                            int total_size) : componet(ct),
+                                              max_merge(max_merge),
+                                              max_entry(max_entry),
+                                              total_size(total_size)
+    {
+        static int global_m_id = 0;
+        m_id = global_m_id++;
+        total_size = global_m_id;
+    }
     virtual std::string get_internal_size() const override
     {
         return fmt::format("name: {} in: {} out: {} current_map: {}  ", "watcher_list_write_unit",
@@ -74,7 +108,7 @@ public:
     //bool busy;
     virtual bool empty() const override
     {
-        return in_request.empty() and out_mem_requst.empty() and current_map.empty();
+        return in_request.empty() and out_mem_requst.empty();
     }
 
     //watcher_list_write_unit(uint64_t &current_cycle);

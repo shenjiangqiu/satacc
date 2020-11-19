@@ -37,6 +37,8 @@ private:
     unsigned num_watchers;
     unsigned num_clauses;
     unsigned num_partition;
+    int num_writer_entry;
+    int num_writer_merge;
     std::string dram_config_file;
     //std::string watcher_icnt;
     std::vector<std::function<bool()>> clock_passes;
@@ -77,9 +79,20 @@ private:
     void add_hook_from_watcher_icnt_out();
     void add_hook_from_watcher_icnt_to_watcher_writer();
 
-
-
 public:
+    void flush_all()
+    {
+        for (auto &writer : m_watcher_write_unit)
+        {
+            writer->flush();
+        }
+        while (!this->empty())
+        {
+            this->cycle();
+            this->current_cycle++;
+        }
+        assert(std::all_of(m_watcher_write_unit.begin(), m_watcher_write_unit.end(), [](auto &&writer) { return writer->is_flushed(); }));
+    }
     std::string get_internal_size() const override
     {
         std::string r;

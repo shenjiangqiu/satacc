@@ -90,6 +90,7 @@ bool cache_interface::from_in_to_cache()
                 if (cache_result == sjq::cache::miss and m_caches[i].get_last_evict())
                 {
                     miss_queue.push_back({false, from_cache_addr_to_real_addr(m_caches[i].get_last_evict(), i)});
+               //     std::cout << "send write:" << addr << std::endl;
                 }
                 in_request_queue.pop_front();
 
@@ -116,8 +117,13 @@ bool cache_interface::from_in_to_cache()
                 addr_to_req[block_addr].push_back(std::move(req));
                 auto evict_addr = m_caches[i].get_last_evict();
                 if (evict_addr)
+                {
                     miss_queue.push_back({false, from_cache_addr_to_real_addr(evict_addr, i)});
+                   // std::cout << "send write:" << addr << std::endl;
+                }
                 miss_queue.push_back({true, block_addr}); //read request
+                //std::cout << fmt::format("read from {}: {}", i, block_addr) << std::endl;
+
                 //new we can add dram traffic of evicted addr.
                 break;
             }
@@ -150,6 +156,7 @@ bool cache_interface::from_miss_q_to_dram()
     {
         busy = true;
         auto addr = miss_queue.front().second;
+       // std::cout << "from missq:" << addr << std::endl;
         miss_queue.pop_front();
         m_mem.send(addr, is_read);
     }

@@ -55,8 +55,16 @@ void acc::add_hook_from_watcher_out_actions()
                 auto &req = watchers[i]->out_send_queue.front();
                 req->icnt_from = i;
                 req->icnt_to = req->as->get_clause_id(req->watcherId) % num_watchers;
-                req->m_size = 4;
-                watcher_to_clause_icnt->in_reqs[i].push_back(std::move(req));
+                if (req->icnt_to == req->icnt_from)
+                {
+                    watcher_to_clause_icnt->out_reqs[i].push_back(std::move(req));
+                }
+                else
+                {
+                    req->m_size = 4;
+                    watcher_to_clause_icnt->in_reqs[i].push_back(std::move(req));
+                }
+
                 watchers[i]->out_send_queue.pop_front();
             }
 
@@ -113,7 +121,7 @@ void acc::add_hook_from_watcher_out_actions()
 
 #endif
                         req->icnt_from = source;
-                        req->icnt_to = num_watchers + get_partition_id_by_addr(req->as->get_addr(), num_partition);
+                        req->icnt_to = num_watchers + get_partition_id_by_addr(req->as->get_watcher_list_meta_addr(), num_partition);
                         req->m_size = 12;
                         memory_read_icnt->in_reqs[source].push_back(std::move(req));
 
@@ -357,19 +365,21 @@ void acc::add_hook_from_trail_to_watcher()
             return false;
         }
         bool busy = false;
-        static int ii = 0;
-        int watcher_id = ii;
-
-        if (!in_m_trail.empty() and watchers[watcher_id]->recieve_rdy())
+        if (!in_m_trail.empty())
         {
-            busy = true;
-            assert(in_m_trail.front()->as != nullptr);
-            watchers[watcher_id]->in_task_queue.push_back(std::move(in_m_trail.front()));
-            sjq::inside_busy = true;
-            in_m_trail.pop_front();
+            auto &req = in_m_trail.front();
+            auto watcher_id = req->as->get_value() % num_watchers;
+            if (watchers[watcher_id]->recieve_rdy())
+            {
+                busy = true;
+                assert(req->as != nullptr);
+                watchers[watcher_id]->in_task_queue.push_back(std::move(req));
+                sjq::inside_busy = true;
+                in_m_trail.pop_front();
+            }
         }
         //change to another watcher now
-        ii = (ii + 1) % num_watchers;
+
         return busy;
     });
 }
@@ -404,15 +414,33 @@ void acc::add_hook_from_watcher_to_writeuite()
             {
                 busy = true;
                 auto &req = watchers[i]->out_write_watcher_list_queue.front();
-                req->ComponentId = i;
+                assert(req->ComponentId == i);
+                if (!req->as->get_is_push_to_other(req->watcherId))
+                {
+                    //to local writer unit
+                    m_watcher_write_unit[i]->in_request.push_back(std::move(req));
+                    watchers[i]->out_write_watcher_list_queue.pop_front();
+                }
+                else
+                {
 
-                //m_watcher_write_unit->in_request.push_back(std::move(req));
-                req->icnt_from = i;
+                    //m_watcher_write_unit->in_request.push_back(std::move(req));
+                    req->icnt_from = i;
 
-                req->icnt_to = req->as->get_pushed(req->watcherId) % num_watchers;
-                req->m_size = 4;
-                watcher_to_writer_icnt->in_reqs[i].push_back(std::move(req));
-                watchers[i]->out_write_watcher_list_queue.pop_front();
+                    req->icnt_to = req->as->get_pushed(req->watcherId) % num_watchers;
+
+                    //might also be local!!!
+                    if (req->icnt_from == req->icnt_to)
+                    {
+                        watcher_to_writer_icnt->out_reqs[i].push_back(std::move(req));
+                    }
+                    else
+                    {
+                        req->m_size = 4;
+                        watcher_to_writer_icnt->in_reqs[i].push_back(std::move(req));
+                    }
+                    watchers[i]->out_write_watcher_list_queue.pop_front();
+                }
             }
 
             return busy;
@@ -450,7 +478,7 @@ void acc::add_hook_from_clause_write_unit_to_cache()
     clock_passes.push_back(
         [this]() {
             bool busy = false;
-            for (auto i = 0; i < num_watchers; i++)
+            for (unsigned i = 0; i < num_watchers; i++)
             {
                 if (!m_clause_write_unit[i]->out.empty())
                 {
@@ -491,8 +519,10 @@ void acc::add_hook_from_watcher_write_unit_to_cache()
                 auto &req = m_watcher_write_unit[i]->out_mem_requst.front();
                 auto source = i;
                 req->icnt_from = source;
-                auto addr = req->as->get_pushed_watcher_list_tail_addr(req->watcherId);
-                req->icnt_to = get_partition_id_by_addr(addr, num_partition);
+                assert(req);
+           
+                auto addr = req->as->get_is_push_to_other(req->watcherId) ? req->as->get_pushed_watcher_list_tail_addr(req->watcherId) : req->as->get_addr();
+                req->icnt_to = num_watchers + get_partition_id_by_addr(addr, num_partition);
                 req->m_size = 4;
 
                 memory_read_icnt->in_reqs[source].push_back(std::move(req));
@@ -605,10 +635,12 @@ void acc::add_hook_from_watcher_icnt_out()
             {
                 busy = true;
                 auto &req = watcher_to_clause_icnt->out_reqs[i].front();
-                auto compId = req->ComponentId;
-                assert((compId - num_watchers) == i * (num_clauses / num_watchers));
-                auto clause_id = compId - num_watchers;
-                clauses[clause_id]->in_task_queue.push_back(std::move(req));
+                static int next_clause = 0;
+                next_clause = (next_clause + 1) % (num_clauses / num_watchers);
+                req->ComponentId = i + next_clause;
+                assert(req->as->get_clause_id(req->watcherId) % num_watchers == i);
+
+                clauses[i + next_clause]->in_task_queue.push_back(std::move(req));
                 watcher_to_clause_icnt->out_reqs[i].pop_front();
             }
         }
@@ -654,7 +686,9 @@ void acc::parse_file()
         {"multi_port", {}},
         {"dram_config", {"ALDRAM-config.cfg", "DDR4-config.cfg", "GDDR5-config.cfg", "LPDDR3-config.cfg", "PCM-config.cfg", "STTMRAM-config.cfg", "WideIO2-config.cfg", "DDR3-config.cfg", "DSARP-config.cfg", "HBM-config.cfg", "LPDDR4-config.cfg", "SALP-config.cfg", "TLDRAM-config.cfg", "WideIO-config.cfg"}},
         {"watcher_to_clause_icnt", {"mesh", "ideal", "ring"}},
-        {"watcher_to_writer_icnt", {"mesh", "ideal", "ring"}}};
+        {"watcher_to_writer_icnt", {"mesh", "ideal", "ring"}},
+        {"num_writer_entry", {}},
+        {"num_writer_merge", {}}};
 
     const std::string input_file_name = "satacc_config.txt";
     std::ifstream in(input_file_name);
@@ -710,6 +744,8 @@ void acc::parse_file()
     unsigned num_mem;
 
     num_mem = std::stoul(acc_config["mems"]);
+    num_writer_entry = std::stoul(acc_config["num_writer_entry"]);
+    num_writer_merge = std::stoul(acc_config["num_writer_merge"]);
 
     num_partition = num_mem;
     //parse the icnt type
@@ -811,7 +847,7 @@ acc::acc(unsigned t_num_watchers,
     m_componets.push_back(m_cache_interface);
     for (unsigned i = 0; i < t_num_watchers; i++)
     {
-        auto watcher_writer = new watcher_list_write_unit(current_cycle);
+        auto watcher_writer = new watcher_list_write_unit(current_cycle, num_writer_merge, num_writer_entry, num_watchers);
         m_watcher_write_unit.push_back(watcher_writer);
         m_componets.push_back(watcher_writer);
     }
@@ -846,6 +882,7 @@ acc::acc(unsigned t_num_watchers,
     add_hook_from_icnt_to_other();
     //add hook from watcher icnt to others
     add_hook_from_watcher_icnt_out();
+    add_hook_from_watcher_icnt_to_watcher_writer();
 }
 
 acc::~acc()

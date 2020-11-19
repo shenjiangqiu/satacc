@@ -42,8 +42,8 @@ bool private_cache::from_in_to_out()
         }
         addr = addr & ((1ull << 32) - 1); //only cover 4gb memory
         auto block_addr = addr & ~((1 << 6) - 1);
-        auto result = m_cache.try_access(block_addr, cache_type);
-        //auto result = sjq::cache::hit;
+        //auto result = m_cache.try_access(block_addr, cache_type);
+        auto result = sjq::cache::hit;
         if (result == sjq::cache::resfail)
         {
             busy = false;
@@ -51,7 +51,7 @@ bool private_cache::from_in_to_out()
         else
         {
             busy = true;
-            result = m_cache.access(block_addr, cache_type);
+            //result = m_cache.access(block_addr, cache_type);
             switch (result)
             {
             case sjq::cache::hit:

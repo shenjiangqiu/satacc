@@ -10,3 +10,5 @@ ideal_memory=false
 ideal_l3cache=false
 multi_port=1
 dram_config=DDR4-config.cfg
+num_writer_merge=8
+num_writer_entry=64
