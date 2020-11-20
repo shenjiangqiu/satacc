@@ -61,7 +61,8 @@ void acc::add_hook_from_watcher_out_actions()
                 }
                 else
                 {
-                    req->m_size = 4;
+                    total_watcher_clause_icnt_traffic += 8;
+                    req->m_size = 8;
                     watcher_to_clause_icnt->in_reqs[i].push_back(std::move(req));
                 }
 
@@ -94,6 +95,7 @@ void acc::add_hook_from_watcher_out_actions()
                         req->icnt_from = source;
                         req->icnt_to = num_watchers + get_partition_id_by_addr(req->addr, num_partition);
                         req->m_size = 12;
+                        //total_memory_icnt_traffic+=64;
                         memory_read_icnt->in_reqs[source].push_back(std::move(req));
 
                         watchers[i]->out_memory_read_queue.pop_front();
@@ -206,6 +208,8 @@ void acc::add_hook_from_clause_to_mem()
                             req->icnt_to = num_watchers + get_partition_id_by_addr(get_addr_by_req(req), num_partition);
                             req->m_size = 12;
 
+                            total_memory_icnt_traffic += 64;
+
                             memory_read_icnt->in_reqs[source].push_back(std::move(req));
                             clauses[clauseId]->out_memory_read_queue.pop_front();
                         }
@@ -254,6 +258,7 @@ void acc::add_hook_from_cache_to_clause_and_watchers()
                 req->icnt_from = i + num_watchers;
                 req->icnt_to = req->ComponentId < num_watchers ? req->ComponentId : (req->ComponentId - num_watchers) / (num_clauses / num_watchers);
                 req->m_size = 64;
+                total_memory_icnt_traffic += 64;
                 memory_read_icnt->in_reqs[i + num_watchers].push_back(std::move(req));
                 m_cache_interface->out_resp_queues[i].pop_front();
                 /*
@@ -437,6 +442,7 @@ void acc::add_hook_from_watcher_to_writeuite()
                     else
                     {
                         req->m_size = 4;
+                        total_watcher_writer_icnt_traffic += 8;
                         watcher_to_writer_icnt->in_reqs[i].push_back(std::move(req));
                     }
                     watchers[i]->out_write_watcher_list_queue.pop_front();
@@ -491,7 +497,7 @@ void acc::add_hook_from_clause_write_unit_to_cache()
                     auto addr = req->as->get_clause_addr(req->watcherId);
                     req->icnt_to = num_watchers + get_partition_id_by_addr(addr, num_partition);
                     req->m_size = 12;
-
+                    total_memory_icnt_traffic += 64;
                     memory_read_icnt->in_reqs[source].push_back(std::move(req));
 
                     //m_cache_interface->in_request_queue.push_back(std::move(req));
@@ -524,7 +530,7 @@ void acc::add_hook_from_watcher_write_unit_to_cache()
                 auto addr = req->as->get_is_push_to_other(req->watcherId) ? req->as->get_pushed_watcher_list_tail_addr(req->watcherId) : req->as->get_addr();
                 req->icnt_to = num_watchers + get_partition_id_by_addr(addr, num_partition);
                 req->m_size = 4;
-
+                total_memory_icnt_traffic+=64;
                 memory_read_icnt->in_reqs[source].push_back(std::move(req));
 
                 m_watcher_write_unit[i]->out_mem_requst.pop_front();

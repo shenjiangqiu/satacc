@@ -31,6 +31,10 @@ class acc : public componet
     using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
+    unsigned long long total_memory_icnt_traffic = 0;
+    unsigned long long total_watcher_clause_icnt_traffic = 0;
+    unsigned long long total_watcher_writer_icnt_traffic = 0;
+
     void parse_file();
     unsigned private_cache_size;
     /* data */
@@ -107,9 +111,12 @@ public:
     std::string get_line_trace() const override
     {
         std::string r("start line trace..\nacc\n");
+        r += fmt::format("mem_traffic: {}\nto_clause_icnt: {}\nto_writer_icnt: {}",
+                         total_memory_icnt_traffic,
+                         total_watcher_clause_icnt_traffic,
+                         total_watcher_writer_icnt_traffic);
         for (auto i : m_componets)
         {
-
             r.append(i->get_line_trace());
             r.append("\n");
         }
