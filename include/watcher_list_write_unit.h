@@ -64,6 +64,9 @@ private:
     int total_size;
     int m_id = 0;
 
+    unsigned long long total_origin_package = 0;
+    unsigned long long total_merged_package = 0;
+
 public:
     void flush()
     {
@@ -101,8 +104,13 @@ public:
     //virtual double get_busy_percent() const override;
     virtual std::string get_line_trace() const override
     {
-        return fmt::format("name: {} busy_percent: {}  \nevict_current_hist {}",
-                           "watcher_list_write_unit", get_busy_percent(), evict_current_size_histo);
+        return fmt::format("name: {} busy_percent: {}  \nevict_current_hist {}\n",
+                           "watcher_list_write_unit",
+                           get_busy_percent(),
+                           evict_current_size_histo) +
+               fmt::format("total_origin_package: {}\ntotal_merged_package: {}\n",
+                           total_origin_package,
+                           total_merged_package);
     }
     //static uint64_t current_cycle;
     //bool busy;

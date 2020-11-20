@@ -40,6 +40,8 @@ bool watcher_list_write_unit::do_cycle()
             else
             {
                 out_mem_requst.push_back(std::move(req));
+                total_origin_package += current_map.at(value);
+                total_merged_package++;
                 current_map.erase(value);
                 current_req.erase(value);
             }
@@ -59,6 +61,8 @@ bool watcher_list_write_unit::do_cycle()
                 auto &evict = current_req.at(oldest_entry);
                 assert(evict);
                 out_mem_requst.push_back(std::move(evict));
+                total_origin_package += current_map.at(oldest_entry);
+                total_merged_package++;
                 current_req.erase(oldest_entry);
                 current_map.erase(oldest_entry);
             }
