@@ -373,7 +373,7 @@ void acc::add_hook_from_trail_to_watcher()
         if (!in_m_trail.empty())
         {
             auto &req = in_m_trail.front();
-            auto watcher_id = req->as->get_value() % num_watchers;
+            auto watcher_id = req->as->get_value() / 2 % num_watchers;
             if (watchers[watcher_id]->recieve_rdy())
             {
                 busy = true;
@@ -530,7 +530,7 @@ void acc::add_hook_from_watcher_write_unit_to_cache()
                 auto addr = req->as->get_is_push_to_other(req->watcherId) ? req->as->get_pushed_watcher_list_tail_addr(req->watcherId) : req->as->get_addr();
                 req->icnt_to = num_watchers + get_partition_id_by_addr(addr, num_partition);
                 req->m_size = 4;
-                total_memory_icnt_traffic+=64;
+                total_memory_icnt_traffic += 64;
                 memory_read_icnt->in_reqs[source].push_back(std::move(req));
 
                 m_watcher_write_unit[i]->out_mem_requst.pop_front();
