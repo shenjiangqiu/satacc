@@ -71,6 +71,8 @@ public:
         case AccessType::WriteMissRead:
             hit ? write_miss_read_hit++ : write_miss_read_miss++;
             break;
+        case AccessType::ReadOtherWatcherList:
+            break;
         default:
             throw;
         }
@@ -83,6 +85,7 @@ class cache_interface : public componet
     using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
+    uint64_t internal_cycle = 0;
     cache_stats m_stats;
     unsigned cache_delay = 2;
     unsigned delay_q_size = 64;

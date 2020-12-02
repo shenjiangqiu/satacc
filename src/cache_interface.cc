@@ -47,7 +47,7 @@ bool cache_interface::from_in_to_cache()
                 }
                 else
                 {
-                    delay_resp_queues[i].push_back({current_cycle, std::move(req)});
+                    delay_resp_queues[i].push_back({internal_cycle, std::move(req)});
 
                     in_request_queue.pop_front();
                 }
@@ -90,7 +90,7 @@ bool cache_interface::from_in_to_cache()
                 if (cache_result == sjq::cache::miss and m_caches[i].get_last_evict())
                 {
                     miss_queue.push_back({false, from_cache_addr_to_real_addr(m_caches[i].get_last_evict(), i)});
-               //     std::cout << "send write:" << addr << std::endl;
+                    //     std::cout << "send write:" << addr << std::endl;
                 }
                 in_request_queue.pop_front();
 
@@ -102,7 +102,7 @@ bool cache_interface::from_in_to_cache()
             {
             case sjq::cache::hit:
 
-                delay_resp_queues[i].push_back(std::make_pair(current_cycle, std::move(req)));
+                delay_resp_queues[i].push_back(std::make_pair(internal_cycle, std::move(req)));
                 /* code */
                 break;
             case sjq::cache::hit_res:
@@ -119,7 +119,7 @@ bool cache_interface::from_in_to_cache()
                 if (evict_addr)
                 {
                     miss_queue.push_back({false, from_cache_addr_to_real_addr(evict_addr, i)});
-                   // std::cout << "send write:" << addr << std::endl;
+                    // std::cout << "send write:" << addr << std::endl;
                 }
                 miss_queue.push_back({true, block_addr}); //read request
                 //std::cout << fmt::format("read from {}: {}", i, block_addr) << std::endl;
@@ -156,7 +156,7 @@ bool cache_interface::from_miss_q_to_dram()
     {
         busy = true;
         auto addr = miss_queue.front().second;
-       // std::cout << "from missq:" << addr << std::endl;
+        // std::cout << "from missq:" << addr << std::endl;
         miss_queue.pop_front();
         m_mem.send(addr, is_read);
     }
@@ -185,7 +185,7 @@ bool cache_interface::from_dramresp_to_resp()
             auto &v = addr_to_req[addr];
             for (auto &i : v)
             {
-                delay_resp_queue.push_back(std::make_pair(componet::current_cycle, std::move(i)));
+                delay_resp_queue.push_back(std::make_pair(internal_cycle, std::move(i)));
             }
             addr_to_req.erase(addr);
         }
@@ -201,7 +201,7 @@ bool cache_interface::from_delayresp_to_out()
         {
             this_busy[i] = true;
             busy = true;
-            if (current_cycle > delay_resp_queue.front().first + cache_delay)
+            if (internal_cycle > delay_resp_queue.front().first + cache_delay)
             {
                 //busy = true;
                 auto &req = delay_resp_queue.front().second;
@@ -327,9 +327,9 @@ cache_interface::cache_interface(int cache_set_assositive,
 cache_interface::~cache_interface() {}
 bool cache_interface::do_cycle()
 {
+    internal_cycle++;
     bool busy = false;
     std::fill(this_busy.begin(), this_busy.end(), false); //fill all to not busy;
-    //current_cycle++;
     busy |= m_mem.cycle();
     while (m_mem.return_avaliable())
     {
