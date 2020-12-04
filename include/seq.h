@@ -53,6 +53,7 @@ public:
             //1,read watcher list meta data,
             if (req->as->get_watcher_size() == 0)
             {
+                in_reqs.pop();
                 continue;
             }
             req->type = AccessType::ReadWatcherMetaData;
