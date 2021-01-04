@@ -66,12 +66,12 @@ bool private_cache::from_in_to_out()
                 out_miss_queue.push_back(copy_unit_ptr(req));
                 assert(addr_to_req.find(block_addr) == addr_to_req.end());
                 //miss and evict some entry, write back the entry.
-                if (m_cache.get_last_evict() != 0)
+                if (m_cache.get_last_evict().get_tag() != 0)
                 {
                     //the last evict enty was valid, shoud write back.
                     auto new_req = copy_unit_ptr(req);
                     new_req->type = AccessType::EvictWrite;
-                    new_req->addr = m_cache.get_last_evict();
+                    new_req->addr = m_cache.get_last_evict().get_tag()<<6;
                     out_miss_queue.push_back(std::move(new_req));
                 }
 

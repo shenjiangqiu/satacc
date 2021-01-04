@@ -105,7 +105,7 @@ private:
 
     std::deque<uint64_t> dram_resp_queue;
     uint64_t get_cache_addr(uint64_t addr);
-    uint64_t from_cache_addr_to_real_addr(uint64_t cache_addr, int partition_id);
+    uint64_t from_cache_addr_to_real_addr(uint64_t cache_addr, int partition_id) const;
 
     //will consume the request in in_requests
     bool from_in_to_cache();
