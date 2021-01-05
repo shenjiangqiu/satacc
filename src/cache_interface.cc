@@ -77,7 +77,7 @@ bool cache_interface::from_in_to_cache() {
 
             cache_result = m_caches[i].access(cache_addr, cache_type,
                                               (int) req->type); //fix the cache access behavior, now can support write access
-            m_stats.update(cache_result != sjq::cache::miss, *req);
+
             //here we need to deal with the write traffic,
             if (cache_type == sjq::cache::write) {
                 if (cache_result == sjq::cache::miss and m_caches[i].get_last_evict().get_tag() != 0 and
@@ -85,9 +85,9 @@ bool cache_interface::from_in_to_cache() {
                     miss_queue.emplace_back(false,
                                             from_cache_addr_to_real_addr(m_caches[i].get_last_evict().get_tag() << 6,
                                                                          i));
-                    cache_interface_req n_req = *req;
+                    cache_interface_req n_req;
                     auto t_type = (AccessType) m_caches[i].get_last_evict().getMType();
-                    std::cout << t_type << std::endl;
+                    //std::cout << t_type << std::endl;
                     if (t_type == AccessType::ReadClauseData) {
                         t_type = AccessType::WriteClause;
                     } else if (t_type == AccessType::ReadWatcherData) {
@@ -96,7 +96,7 @@ bool cache_interface::from_in_to_cache() {
                         assert(t_type == AccessType::WriteWatcherList or t_type == AccessType::WriteClause);
                     }
                     n_req.type = t_type;
-                    std::cout << t_type << std::endl;
+                    //std::cout << t_type << std::endl;
 
                     m_stats.update(false, n_req);
                     //     std::cout << "send write:" << addr << std::endl;
@@ -107,6 +107,8 @@ bool cache_interface::from_in_to_cache() {
             }
             //for the read access
             //cache_result = sjq::cache::hit;
+            //it's read
+            m_stats.update(cache_result != sjq::cache::miss, *req);
             switch (cache_result) {
                 case sjq::cache::hit:
 
@@ -126,9 +128,9 @@ bool cache_interface::from_in_to_cache() {
                     if (evict_entry.get_tag() != 0 and evict_entry.isDirty()) {
                         miss_queue.push_back({false, from_cache_addr_to_real_addr(evict_entry.get_tag() << 6, i)});
                         // std::cout << "send write:" << addr << std::endl;
-                        cache_interface_req n_req = *req;
+                        cache_interface_req n_req;
                         auto t_type = (AccessType) m_caches[i].get_last_evict().getMType();
-                        std::cout << t_type << std::endl;
+                        //std::cout << t_type << std::endl;
                         if (t_type == AccessType::ReadClauseData) {
                             t_type = AccessType::WriteClause;
                         } else if (t_type == AccessType::ReadWatcherData) {
@@ -137,7 +139,7 @@ bool cache_interface::from_in_to_cache() {
                             assert(t_type == AccessType::WriteWatcherList or t_type == AccessType::WriteClause);
                         }
                         n_req.type = t_type;
-                        std::cout << t_type << std::endl;
+                        //std::cout << t_type << std::endl;
 
                         m_stats.update(false, n_req);
                     }

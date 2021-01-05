@@ -29,7 +29,7 @@ bool watcher_list_write_unit::do_cycle()
         assert(watcehrSize != 0);
         auto value = (as->get_is_push_to_other(req->watcherId) ? as->get_pushed(req->watcherId) : as->get_value());
         //assert(m_id == value % total_size);
-        assert(m_id == value % total_size);
+        //assert(m_id == value % total_size);
 
         if (current_map.count(value))
         {
