@@ -117,7 +117,7 @@ public:
 
     std::deque<req_ptr> out_write_watcher_list_queue;
     watcher(uint64_t &t);
-    ~watcher();
+    ~watcher() override;
 
 protected:
     bool do_cycle() override;

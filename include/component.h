@@ -13,7 +13,7 @@ public:
     //static uint64_t current_cycle;
     //bool busy;
     virtual bool empty() const = 0;
-    virtual ~componet() {}
+    virtual ~componet() = default;
     bool cycle()
     {
         auto result = do_cycle();
