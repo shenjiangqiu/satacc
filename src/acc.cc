@@ -7,6 +7,10 @@
 #include <memreq_info.h>
 #include <fstream>
 #include <sstream>
+#include "boost/program_options.hpp"
+#include "fmt/format.h"
+
+namespace po = boost::program_options;
 
 namespace sjq {
     bool inside_busy;
@@ -30,6 +34,7 @@ void acc::init_watcher_and_clause() {
     }
 }
 
+//TODO, currently , watcher to clause need to be change
 void acc::add_hook_from_watcher_out_actions() {
     //handle from watchers to clauses, and from watchers to memory
     for (unsigned i = 0; i < num_watchers; i++) {
@@ -341,7 +346,12 @@ void acc::add_hook_from_trail_to_watcher() {
         bool busy = false;
         if (!in_m_trail.empty()) {
             auto &req = in_m_trail.front();
-            auto watcher_id = req->as->get_value() / 2 % num_watchers;
+            int watcher_id = 0;
+            if (single_watcher) {
+                watcher_id = 0;
+            } else {
+                watcher_id = (req->as->get_value() / 2) % num_watchers;
+            }
             if (watchers[watcher_id]->recieve_rdy()) {
                 busy = true;
                 assert(req->as != nullptr);
@@ -566,6 +576,7 @@ void acc::add_hook_from_icnt_to_other() {
     });
 }
 
+//TODO, currently the clause will not be associated to watcher
 void acc::add_hook_from_watcher_icnt_out() {
     clock_passes.push_back([this]() -> bool {
         bool busy = false;
@@ -612,6 +623,44 @@ acc::acc(unsigned t_num_watchers,
                                           t_current_cycle) {}
 
 void acc::parse_file() {
+    po::options_description config_file_options("all options");
+    std::map<std::string, int> int_map;
+    std::map<std::string, std::string> string_map;
+
+    config_file_options.add_options()("help", "print help infomation")
+            ("n_watchers",
+             po::value<int>()->default_value(16)->notifier([&](int v) { int_map["n_watchers"] = v; }),
+             "the number of watchers")
+            ("n_clauses", po::value<int>()->default_value(16)->notifier([&](int v) { int_map["n_clauses"] = v; }),
+             "the number of clauses")(
+            "mems", po::value<int>()->default_value(8)->notifier([&](int v) { int_map["mems"] = v; }),
+            "the number of mem partition")(
+            "icnt",
+            po::value<std::string>()->default_value("ideal")->notifier([&](std::string v) { string_map["icnt"] = v; }),
+            "the type of icnt")(
+            "seq", po::bool_switch()->default_value(false), "if enable seq mode")(
+            "ideal_memory", po::bool_switch()->default_value(false), "if use ideal memory")(
+            "ideal_l3cache", po::bool_switch()->default_value(16), "if use ideal l3 cache")(
+            "multi_port", po::value<int>()->default_value(1)->notifier([&](int v) { int_map["multi_port"] = v; }),
+            "the number of ports for l3 cache to read in one cycle")(
+            "dram_config", po::value<std::string>()->default_value("HBM-config.conf")->notifier(
+                    [&](std::string v) { string_map["dram_config"] = v; }), "name of the dram_config")(
+            "watcher_to_clause_icnt", po::value<std::string>()->default_value("mesh")->notifier(
+                    [&](std::string v) { string_map["watcher_to_clause_icnt"] = v; }),
+            "the type of the icnt connect watcher and clause")(
+            "watcher_to_writer_icnt", po::value<std::string>()->default_value("mesh")->notifier(
+                    [&](std::string v) { string_map["watcher_to_writer_icnt"] = v; }),
+            "the type of the icnt connect the watcher to the writer")(
+            "num_writer_entry",
+            po::value<int>()->default_value(64)->notifier([&](int v) { int_map["num_writer_entry"] = v; }),
+            "the number of entrys in writer")(
+            "num_writer_merge",
+            po::value<int>()->default_value(8)->notifier([&](int v) { int_map["num_writer_merge"] = v; }),
+            "the number of requests can be merged by one entry")(
+            "single_watcher",
+            po::bool_switch()->default_value(false),
+            "restrice single watcher!");
+
     const std::map<std::string, std::set<std::string>> all_settings = {
             {"n_watchers",             {}},
             {"n_clauses",              {}},
@@ -625,7 +674,17 @@ void acc::parse_file() {
             {"watcher_to_clause_icnt", {"mesh",              "ideal",           "ring"}},
             {"watcher_to_writer_icnt", {"mesh",              "ideal",           "ring"}},
             {"num_writer_entry",       {}},
-            {"num_writer_merge",       {}}};
+            {"num_writer_merge",       {}},
+            {"single_watcher",         {"true",              "false"}}};
+
+    po::variables_map vm;
+    po::store(po::parse_config_file("satacc_config.txt", config_file_options), vm);
+    if (vm.count("help")) {
+        std::cout << config_file_options << std::endl;
+        std::cout.flush();
+        exit(-1);
+    }
+
 
     const std::string input_file_name = "satacc_config.txt";
     std::ifstream in(input_file_name);
@@ -694,7 +753,7 @@ void acc::parse_file() {
     enable_sequential = acc_config["seq"] == "true" ? true : false;
     ideal_memory = acc_config["ideal_memory"] == "true" ? true : false;
     ideal_l3cache = acc_config["ideal_l3cache"] == "true" ? true : false;
-
+    single_watcher = acc_config["single_watcher"] == "true" ? true : false;
     auto number = std::stoul(acc_config["multi_port"]);
     if (number > 1) {
         multi_l3cache_port = number;
@@ -728,6 +787,7 @@ void acc::parse_file() {
     } else {
         throw;
     }
+
 }
 
 acc::acc(unsigned t_num_watchers,

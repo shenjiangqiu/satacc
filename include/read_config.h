@@ -15,6 +15,7 @@ namespace sjq{
        int cpu_to_vault_latency;
        bool mode2;
        int ctr_latency;
+       bool use_single_watcher;
     };
     std::vector<config> parse_file(const std::string &filename);
 }

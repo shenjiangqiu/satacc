@@ -15,6 +15,7 @@ namespace sjq
         is >> m_config.cpu_to_vault_latency;
         is >> m_config.mode2;
         is >> m_config.ctr_latency;
+        is >> m_config.use_single_watcher;
         return is;
     }
 

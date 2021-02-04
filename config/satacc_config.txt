@@ -12,3 +12,4 @@ multi_port=1
 dram_config=DDR4-config.cfg
 num_writer_merge=8
 num_writer_entry=64
+single_watcher=false

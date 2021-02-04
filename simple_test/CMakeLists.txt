@@ -1,2 +1,2 @@
-add_executable(simple_test acctest.cc)
+add_executable(simple_test potest.cc)
 target_link_libraries(simple_test satacc generate_wrap)

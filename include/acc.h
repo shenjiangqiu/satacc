@@ -1,5 +1,6 @@
 #ifndef ACC_H
 #define ACC_H
+
 #include <vector>
 #include <deque>
 
@@ -20,12 +21,11 @@
 
 #include <new_intersim_wrapper.h>
 #include <ramulator_wrapper.h>
-namespace sjq
-{
+
+namespace sjq {
     extern bool inside_busy;
 }
-class acc : public componet
-{
+class acc : public componet {
     using req_ptr = std::unique_ptr<cache_interface_req>;
     using req_ptr_q = std::deque<req_ptr>;
     using req_ptr_q_vec = std::vector<req_ptr_q>;
@@ -36,6 +36,7 @@ private:
     unsigned long long total_watcher_writer_icnt_traffic = 0;
 
     void parse_file();
+
     unsigned private_cache_size;
     /* data */
     unsigned num_watchers;
@@ -58,6 +59,7 @@ private:
     bool enable_sequential = false;
     bool ideal_memory = false;
     bool ideal_l3cache = false;
+    bool single_watcher = false;
     unsigned multi_l3cache_port = 1;
     //important
     //all the componets are owned by m_componnets
@@ -66,71 +68,83 @@ private:
 
     icnt_base *watcher_to_clause_icnt;
     icnt_base *watcher_to_writer_icnt;
+
     void init_watcher_and_clause();
+
     void add_hook_from_watcher_out_actions();
+
     void add_hook_from_clause_to_mem();
+
     void add_hook_from_cache_to_clause_and_watchers();
+
     void add_hook_from_private_cache();
+
     void add_hook_from_trail_to_watcher();
+
     void add_hook_from_clause_to_trail();
+
     void add_hook_from_watcher_to_writeuite();
+
     void add_hook_from_clause_to_writeuint();
+
     void add_hook_from_clause_write_unit_to_cache();
+
     void add_hook_from_watcher_write_unit_to_cache();
 
     //icnt out
     void add_hook_from_icnt_to_other();
+
     void add_hook_from_watcher_icnt_out();
+
     void add_hook_from_watcher_icnt_to_watcher_writer();
 
 public:
-    void flush_all()
-    {
-        for (auto &writer : m_watcher_write_unit)
-        {
+    void flush_all() {
+        for (auto &writer : m_watcher_write_unit) {
             writer->flush();
         }
-        while (!this->empty())
-        {
+        while (!this->empty()) {
             this->cycle();
             this->current_cycle++;
         }
-        assert(std::all_of(m_watcher_write_unit.begin(), m_watcher_write_unit.end(), [](auto &&writer) { return writer->is_flushed(); }));
+        assert(std::all_of(m_watcher_write_unit.begin(), m_watcher_write_unit.end(),
+                           [](auto &&writer) { return writer->is_flushed(); }));
     }
-    std::string get_internal_size() const override
-    {
+
+    std::string get_internal_size() const override {
         std::string r;
-        for (auto i : m_componets)
-        {
+        for (auto i : m_componets) {
             r += (i->get_internal_size());
             r += ("\n");
         }
         return r;
     }
 
-    std::string get_line_trace() const override
-    {
+    std::string get_line_trace() const override {
         std::string r("start line trace..\nacc\n");
         r += fmt::format("mem_traffic: {}\nto_clause_icnt: {}\nto_writer_icnt: {}",
                          total_memory_icnt_traffic,
                          total_watcher_clause_icnt_traffic,
                          total_watcher_writer_icnt_traffic);
-        for (auto i : m_componets)
-        {
+        for (auto i : m_componets) {
             r.append(i->get_line_trace());
             r.append("\n");
         }
         return r;
     }
-    bool empty() const override
-    {
 
-        return in_m_trail.empty() and std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
+    bool empty() const override {
+
+        return in_m_trail.empty() and
+               std::all_of(m_componets.begin(), m_componets.end(), [](auto &c) { return c->empty(); });
     }
+
     std::deque<req_ptr> in_m_trail;
 
     acc(unsigned num_watchers, unsigned num_clauses, uint64_t &tcurrent_cycle);
+
     acc(unsigned, unsigned, unsigned, unsigned, uint64_t &);
+
     ~acc();
 
 protected:
