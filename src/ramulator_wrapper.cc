@@ -36,10 +36,13 @@ ramulator_wrapper::ramulator_wrapper(const ramulator::Config &configs, int cache
     const string &std_name = configs["standard"];
     assert(name_to_func.find(std_name) != name_to_func.end() && "unrecognized standard name");
     mem = name_to_func[std_name](configs, cacheline);
+    Stats::statlist.output("mem_stats.txt");
     tCK = mem->clk_ns();
 }
 ramulator_wrapper::~ramulator_wrapper()
 {
+    Stats::statlist.printall();
+    mem->finish();
     delete mem;
 }
 void ramulator_wrapper::finish()
