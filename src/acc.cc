@@ -171,13 +171,13 @@ void acc::add_hook_from_clause_to_mem() {
         clock_passes.push_back(
                 [clauseId, n_w, n_c, this]() {
                     bool busy = false;
-                    if (!clauses[clauseId]->out_memory_read_queue.empty()) {
-                        if (clauses[clauseId]->out_memory_read_queue.front()->type == AccessType::ReadClauseData) {
+                    if (!clauses[clauseId]->is_out_memory_read_queue_empty()) {
+                        if (clauses[clauseId]->get_from_out_memory_read_queue()->type == AccessType::ReadClauseData) {
                             auto source = clauseId / (n_c / n_w);
                             if (memory_read_icnt->has_buffer(source)) {
                                 busy = true;
-                                assert(clauses[clauseId]->out_memory_read_queue.front()->as != nullptr);
-                                auto &req = clauses[clauseId]->out_memory_read_queue.front();
+                                assert(clauses[clauseId]->get_from_out_memory_read_queue()->as != nullptr);
+                                auto &req = clauses[clauseId]->get_from_out_memory_read_queue();
                                 req->ComponentId = clauseId + num_watchers;
 #ifdef SJQ_ICNT_DEBUG
                                 std::cout << fmt::format("from clause to icnt:{} {}", clauseId, source) << std::endl;
@@ -194,11 +194,11 @@ void acc::add_hook_from_clause_to_mem() {
                                 total_memory_icnt_traffic += 64;
 
                                 memory_read_icnt->in_reqs[source].push_back(std::move(req));
-                                clauses[clauseId]->out_memory_read_queue.pop_front();
+                                clauses[clauseId]->pop_from_out_memory_read_queue();
                             }
                         } else {
                             //push value request to private cache
-                            auto &req = clauses[clauseId]->out_memory_read_queue.front();
+                            auto &req = clauses[clauseId]->get_from_out_memory_read_queue();
                             assert(req->type == AccessType::ReadClauseValue);
                             auto watcherId = clauseId / (num_clauses / num_watchers);
                             if (m_private_caches[watcherId]->recieve_rdy()) {
@@ -213,9 +213,10 @@ void acc::add_hook_from_clause_to_mem() {
 
 #endif
                                 m_private_caches[watcherId]->in_request.push_back(
-                                        std::move(clauses[clauseId]->out_memory_read_queue.front()));
+                                        std::move(clauses[clauseId]->get_from_out_memory_read_queue()));
 
-                                clauses[clauseId]->out_memory_read_queue.pop_front();
+                                clauses[clauseId]->pop_from_out_memory_read_queue();
+
                             }
                         }
                     }
@@ -316,7 +317,8 @@ void acc::add_hook_from_private_cache() {
                     std::cout << fmt::format("from private cache {} to clause {}", i, clauseId) << std::endl;
                     std::cout << *req << std::endl;
 #endif
-                    clauses[clauseId]->in_memory_resp_queue.push_back(std::move(req));
+                    clauses[clauseId]->push_to_in_memory_resp_queue(std::move(req));
+
                     m_private_caches[watcherId]->out_send_q.pop_front();
                 } else {
                     assert(req->type == AccessType::ReadWatcherValue);
@@ -372,11 +374,11 @@ void acc::add_hook_from_clause_to_trail() {
         clock_passes.push_back([i, this]() {
             bool busy = false;
             int clause_id = i;
-            if (!clauses[clause_id]->out_queue.empty()) {
+            if (!clauses[clause_id]->is_out_queue_empty()) {
                 busy = true;
-                assert(clauses[clause_id]->out_queue.front()->as != nullptr);
-                in_m_trail.push_back(std::move(clauses[clause_id]->out_queue.front()));
-                clauses[clause_id]->out_queue.pop_front();
+                assert(clauses[clause_id]->get_from_out_queue()->as != nullptr);
+                in_m_trail.push_back(std::move(clauses[clause_id]->get_from_out_queue()));
+                clauses[clause_id]->pop_from_out_queue();
             }
             return busy;
         });
@@ -427,14 +429,14 @@ void acc::add_hook_from_clause_to_writeuint() {
     for (unsigned i = 0; i < num_clauses; i++) {
         clock_passes.push_back([i, this]() {
             bool busy = false;
-            if (!clauses[i]->out_clause_write_queue.empty()) {
+            if (!clauses[i]->is_out_clause_write_queue_empty()) {
                 busy = true;
-                auto &req = clauses[i]->out_clause_write_queue.front();
+                auto &req = clauses[i]->get_from_out_clause_write_queue();
                 req->ComponentId = i + num_watchers;
                 auto writer_id = i / (num_clauses / num_watchers);
 
                 m_clause_write_unit[writer_id]->in.push_back(std::move(req));
-                clauses[i]->out_clause_write_queue.pop_front();
+                clauses[i]->pop_from_out_clause_write_queue();
             }
 
             return busy;
@@ -550,7 +552,8 @@ void acc::add_hook_from_icnt_to_other() {
                         std::cout << *req << std::endl;
 
 #endif
-                        clauses[clause_id]->in_memory_resp_queue.push_back(std::move(req));
+                        clauses[clause_id]->push_to_in_memory_resp_queue(std::move(req));
+                        
                     }
                 }
                 memory_read_icnt->out_reqs[i].pop_front();
@@ -590,7 +593,7 @@ void acc::add_hook_from_watcher_icnt_out() {
                 req->ComponentId = i + next_clause;
                 assert(req->as->get_clause_id(req->watcherId) % num_watchers == i);
 
-                clauses[i + next_clause]->in_task_queue.push_back(std::move(req));
+                clauses[i + next_clause]->push_to_in_task_queue(std::move(req));
                 watcher_to_clause_icnt->out_reqs[i].pop_front();
             }
         }
