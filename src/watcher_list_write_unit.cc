@@ -49,7 +49,7 @@ bool watcher_list_write_unit::do_cycle()
         else
         {
             //add this new entry
-            if (current_map.size() >= max_entry)
+            if (current_map.size() >=(unsigned) max_entry)
             { //need to evict one entry;
                 while (!current_req.count(entry_aging_queue.front()))
                 {

@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <Catch2/catch.hpp>
 #include "acc.h"
 #include "set_up.h"
 #include "cache_interface.h"

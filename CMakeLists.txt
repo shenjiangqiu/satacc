@@ -1,20 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
 project(SatAcc VERSION 0.0.2)
 find_package(Boost REQUIRED COMPONENTS log  program_options log log_setup)
+find_package(Catch2 REQUIRED)
+find_package(fmt REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -DBOOST_LOG_DYN_LINK")
 
 aux_source_directory(src SOURCES)
 option(SJQ_ICNT_DEBUG "option for sjq icnt debug" OFF)
-
+file(GLOB headers include/*.h)
 
 add_library(satacc STATIC ${SOURCES})
-target_include_directories(satacc PUBLIC  
-                    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-                    ${Boost_INCLUDE_DIRS}   
-                     )
-
+target_include_directories(satacc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include )
 if(SJQ_ICNT_DEBUG)
 target_compile_definitions(satacc PUBLIC SJQ_ICNT_DEBUG)
 endif()

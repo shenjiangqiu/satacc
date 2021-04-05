@@ -18,16 +18,16 @@ private:
     unsigned outgoing_read_watcher_data = 0;
     unsigned outgoing_read_watcher_value = 0;
     //std::set<req_ptr &> waiting_watcher_value;
-    unsigned read_size = 64;
-    unsigned value_size = 64;
-    unsigned process_size = 64;
+    //unsigned read_size = 64;
+    //unsigned value_size = 64;
+    //unsigned process_size = 64;
     unsigned in_size = 64;
     unsigned in_mem_size = 64;
 
     unsigned long long total_idle = 0;
     unsigned long long total_busy = 0;
     unsigned long long total_idle_no_task = 0;
-    unsigned long long total_idle_no_watcher_meta_data = 0;
+    //unsigned long long total_idle_no_watcher_meta_data = 0;
     unsigned long long total_idle_no_watcher_data = 0;
     unsigned long long total_idle_no_value = 0;
     /** 

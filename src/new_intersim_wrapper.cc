@@ -93,7 +93,7 @@ bool icnt_ring::do_cycle()
             if (is_has_buffer)
             {
                 busy = true;
-                auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_nodes);
+                //auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_nodes);
                 //auto dest = mem_partition_id;
                 push_into_inct(source, n_nodes, std::move(req));
                 q.pop_front();

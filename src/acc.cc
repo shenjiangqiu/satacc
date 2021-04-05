@@ -810,7 +810,7 @@ acc::acc(unsigned t_num_watchers,
 
     m_cache_interface = new cache_interface(l3_cache_size, num_partition, ideal_memory, ideal_l3cache,
                                             multi_l3cache_port, dram_config_file, current_cycle);
-    m_componets.push_back(m_cache_interface);
+    m_componets.push_back((componet*)m_cache_interface);
     for (unsigned i = 0; i < t_num_watchers; i++) {
         auto watcher_writer = new watcher_list_write_unit(current_cycle, num_writer_merge, num_writer_entry,
                                                           num_watchers);

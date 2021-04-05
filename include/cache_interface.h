@@ -15,6 +15,7 @@
 #include <addr_utiles.h>
 #include <enumerate.h>
 #include <ramulator_wrapper.h>
+#include <array>
 //use template to avoid expesive divide calculate
 class cache_stats
 {
@@ -117,7 +118,7 @@ private:
 
     void write_call_back(uint64_t);
 
-    std::array<uint64_t, (int)AccessType::max> access_hist = {0};
+    std::array<uint64_t, (std::size_t)AccessType::max> access_hist;
     std::vector<std::array<uint64_t, (int)AccessType::max>> access_hists;
     bool is_ideal_dram;
     bool ideal_l3;

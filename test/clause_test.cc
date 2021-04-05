@@ -1,6 +1,6 @@
 
 
-#include "catch.hpp"
+#include <Catch2/catch.hpp>
 #include "watcher.h"
 
 #include "clause.h"

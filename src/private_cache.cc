@@ -22,7 +22,6 @@ bool private_cache::from_in_to_out()
         auto as = req->as;
         auto watcherId = req->watcherId;
         auto clauseId = req->clauseId;
-        sjq::cache::access_type cache_type = sjq::cache::read;
         uint64_t addr = 0;
         switch (req->type)
         {

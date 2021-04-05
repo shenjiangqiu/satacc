@@ -30,7 +30,7 @@ public:
                                                               1, false, false, 1,
                                                               dram_config,
                                                               current_cycle),
-                                            cycle(0), empty(true) {}
+                                             empty(true) {}
 
     void push(req_ptr &&req)
     {
@@ -43,7 +43,7 @@ public:
 private:
     //sjq::cache m_l3_cache;
     cache_interface m_cache_interface;
-    uint64_t cycle;
+    //uint64_t cycle;
     bool empty;
 
     std::queue<req_ptr> in_reqs;

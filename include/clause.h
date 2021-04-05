@@ -15,9 +15,9 @@ class clause : public componet {
 
 private:
   /* data */
-  unsigned ref_size = 64;
+  //unsigned ref_size = 64;
   unsigned data_size = 64;
-  unsigned value_size = 64;
+  //unsigned value_size = 64;
   unsigned process_size = 64;
   unsigned in_size = 64;
   unsigned in_mem_size = 64;

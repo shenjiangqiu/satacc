@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include <Catch2/catch.hpp>
 
 #include "cache_interface.h"
 #include "assign_wrap.h"

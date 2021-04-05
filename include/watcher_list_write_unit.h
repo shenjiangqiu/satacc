@@ -61,7 +61,7 @@ private:
     std::queue<int> entry_aging_queue;
     int max_merge;
     int max_entry;
-    int total_size;
+    //int total_size;
     int m_id = 0;
 
     unsigned long long total_origin_package = 0;
@@ -89,9 +89,7 @@ public:
                             int max_entry,
                             int total_size) : componet(ct),
                                               max_merge(max_merge),
-                                              max_entry(max_entry),
-                                              total_size(total_size)
-    {
+                                              max_entry(max_entry)    {
         static int global_m_id = 0;
         m_id = global_m_id++;
         total_size = global_m_id;

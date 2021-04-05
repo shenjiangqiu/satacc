@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <Catch2/catch.hpp>
 #include <ramulator_wrapper.h>
 #include <RamulatorConfig.h>
 #include <iostream>

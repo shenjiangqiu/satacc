@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include <Catch2/catch.hpp>
 
 #include <functional>
 #include <vector>
