@@ -24,6 +24,7 @@ bool clause::do_cycle() {
       stall_other++;
     }
   }
+  average_inflight_request+=(current_inflight_request-average_inflight_request)/(double)(current_cycle+1);
   return busy;
 }
 
@@ -34,7 +35,7 @@ bool clause::task_to_data_waiting() // get the task and send to data waiting
   if (!in_task_queue.empty() and
       clause_data_read_waiting_queue.size() < data_size) {
     busy = true;
-    // FIXME should be error here
+    current_inflight_request++;
     clause_data_read_waiting_queue.push_back(std::move(in_task_queue.front()));
     clause_data_read_waiting_queue.back()->type = AccessType::ReadClauseData;
     clause_data_read_waiting_queue.back()->clauseId = 0;
@@ -169,6 +170,8 @@ bool clause::process_waiting_to_out() // process the clause and send out
                  .size());
 
       clause_process_waiting_queue.pop_front();
+      current_inflight_request--;
+      assert(current_inflight_request>=0);
     }
     // else just continue, we are processing...;
 

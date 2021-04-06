@@ -96,6 +96,7 @@ bool icnt_ring::do_cycle()
                 //auto mem_partition_id = get_partition_id_by_addr(get_addr_by_req(req), n_nodes);
                 //auto dest = mem_partition_id;
                 push_into_inct(source, n_nodes, std::move(req));
+                
                 q.pop_front();
             }
         }
@@ -219,7 +220,10 @@ bool icnt_mesh::do_cycle()
                 dest = req->icnt_to;
 
                 //auto dest = mem_partition_id;
-                push_into_inct(source, dest, std::move(req));
+                auto result=push_into_inct(source, dest, std::move(req));
+                if(!result){
+                    throw std::runtime_error("can't be error here");
+                }
                 q.pop_front();
             }
         }
@@ -245,13 +249,13 @@ bool icnt_mesh::has_buffer(unsigned source) const
     return m_mesh_network.has_buffer(source);
 }
 
-void icnt_mesh::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
+bool icnt_mesh::push_into_inct(unsigned source, unsigned dest, std::unique_ptr<cache_interface_req> req)
 {
 
     current_inflight_pkg.insert(req.get());
     //icnt_push(source, dest, (void *)req.release(), size); //give the ownership
-    auto result = m_mesh_network.send(req.release(), source, dest);
-    assert(result);
+    
+    return m_mesh_network.send(req.release(), source, dest);
 }
 
 bool icnt_ideal::has_pkg_in_icnt() const

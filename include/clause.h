@@ -15,9 +15,12 @@ class clause : public componet {
 
 private:
   /* data */
-  //unsigned ref_size = 64;
+  // unsigned ref_size = 64;
+  double current_inflight_request=0;
+  double average_inflight_request=0;
+
   unsigned data_size = 64;
-  //unsigned value_size = 64;
+  // unsigned value_size = 64;
   unsigned process_size = 64;
   unsigned in_size = 64;
   unsigned in_mem_size = 64;
@@ -29,9 +32,11 @@ private:
   bool mem_in_to_comp();      // to value_waiting and process waiting
 
   bool process_waiting_to_out(); // process the clause and send out
-
+  //in this queue, each element represent a clause, and the clauseId mean the start point to read
   std::deque<req_ptr> clause_data_read_waiting_queue;
+  //in this queue,each element is a slice of clause within 1 cache line size,max size=64Byte
   std::deque<req_ptr> clause_value_read_waiting_queue;
+  //in this queue, each element is a element inside a clause.size=1element
   std::deque<req_ptr> clause_process_waiting_queue;
 
 public:
@@ -47,10 +52,10 @@ public:
   }
 
   std::string get_line_trace() const override {
-    return fmt::format("{}\nidle_memory {}\nidle_task {}\nidle_other {}",
+    return fmt::format("{}\nidle_memory {}\nidle_task {}\nidle_other {}\naverage_inflight_clause {}\n",
                        std::string("clause:") +
                            std::to_string(get_busy_percent()),
-                       stall_on_going_request, stall_no_task, stall_other);
+                       stall_on_going_request, stall_no_task, stall_other,average_inflight_request);
   }
   bool empty() const override {
     return clause_data_read_waiting_queue.empty() and

@@ -32,6 +32,9 @@ bool watcher::do_cycle() {
     total_busy++;
   }
 
+  //update the average.
+  average_inflight=average_inflight+((double)num_inflight_request-average_inflight)/double(current_cycle+1);
+
   return busy;
 }
 
@@ -81,6 +84,10 @@ bool watcher::from_process_to_out() {
     }
     current_size += 1;
     if (current_size >= total_size) {
+      //pop a watcher list
+      num_inflight_request--;
+
+      assert((long long)num_inflight_request>=0);
       waiting_process_queue.pop_front();
     }
   }
@@ -123,6 +130,8 @@ bool watcher::from_in_to_read() {
   // the watchers inside the watcher list.
   bool busy = false;
   if (!in_task_queue.empty()) {
+    num_inflight_request++;
+
     auto &req = in_task_queue.front();
     req->type = AccessType::ReadWatcherMetaData;
 

@@ -26,7 +26,9 @@ bool watcher_list_write_unit::do_cycle()
 
         req->type = AccessType::WriteWatcherList;
         unsigned watcehrSize = as->get_watcher_size();
-        assert(watcehrSize != 0);
+        if(watcehrSize==0){
+            throw std::runtime_error("can't be zero here");
+        }
         auto value = (as->get_is_push_to_other(req->watcherId) ? as->get_pushed(req->watcherId) : as->get_value());
         //assert(m_id == value % total_size);
         //assert(m_id == value % total_size);

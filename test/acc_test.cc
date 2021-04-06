@@ -3,9 +3,11 @@
 #include "set_up.h"
 #include "cache_interface.h"
 #include <iostream>
-
+#include <fstream>
+#include <generate_config.h>
 TEST_CASE("acc", "[advanced][core][componet]")
 {
+    generate_config();
     uint64_t current_cycle = 0;
     auto m_acc = acc(4, 4, current_cycle);
     m_acc.current_cycle = 0;

@@ -116,7 +116,7 @@ class icnt_mesh : public icnt_base
 
 private:
     network_mesh_c m_mesh_network;
-    void push_into_inct(unsigned source, unsigned dest, req_ptr req); //tack the ownership
+    bool push_into_inct(unsigned source, unsigned dest, req_ptr req); //tack the ownership
     //unsigned get_pkg_size(bool cpu_to_mem, unsigned source, unsigned dest, const req_ptr &req) const;
 
     std::unordered_set<cache_interface_req *> current_inflight_pkg; //do not own the ownership
