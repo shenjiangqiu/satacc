@@ -16,9 +16,10 @@ target_include_directories(satacc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include )
 if(SJQ_ICNT_DEBUG)
 target_compile_definitions(satacc PUBLIC SJQ_ICNT_DEBUG)
 endif()
-target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  fmt 
+target_link_libraries(satacc PUBLIC ${Boost_LIBRARIES}  
 sjqcache dramsim3 minisat_utiles mem_req_interface sjqutils)
 target_link_libraries(satacc PUBLIC intersim2 new_intersim ramulator)
+target_link_libraries(satacc PRIVATE fmt::fmt)
 add_subdirectory(test_utils)
 add_subdirectory(test)
 add_subdirectory(simple_test)
