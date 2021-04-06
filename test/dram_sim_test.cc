@@ -1,5 +1,5 @@
 #include "memory_system.h"
-#include <Catch2/catch.hpp>
+#include <catch2/catch.hpp>
 #include <iostream>
 bool recieved = false;
 int waiting = 4;

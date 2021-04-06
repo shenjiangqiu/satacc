@@ -87,12 +87,11 @@ public:
     watcher_list_write_unit(uint64_t &ct,
                             int max_merge,
                             int max_entry,
-                            int total_size) : componet(ct),
+                            int ) : componet(ct),
                                               max_merge(max_merge),
                                               max_entry(max_entry)    {
         static int global_m_id = 0;
         m_id = global_m_id++;
-        total_size = global_m_id;
     }
     virtual std::string get_internal_size() const override
     {
