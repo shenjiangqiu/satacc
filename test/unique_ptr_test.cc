@@ -1,6 +1,6 @@
 #include <memory>
 #include <iostream>
-#include <Catch2/catch.hpp>
+#include <catch2/catch.hpp>
 TEST_CASE("UNIPTR_TEST", "[basic],[tools]")
 {
     auto a = std::unique_ptr<int>(new int(5));
