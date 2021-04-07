@@ -1,20 +1,20 @@
-#include <ramulator_wrapper.h>
-#include <MemoryFactory.h>
-#include <map>
-#include "RamulatorConfig.h"
-#include "Request.h"
-#include "MemoryFactory.h"
-#include "Memory.h"
 #include "DDR3.h"
 #include "DDR4.h"
+#include "GDDR5.h"
+#include "HBM.h"
 #include "LPDDR3.h"
 #include "LPDDR4.h"
-#include "GDDR5.h"
+#include "Memory.h"
+#include "MemoryFactory.h"
+#include "RamulatorConfig.h"
+#include "Request.h"
+#include "SALP.h"
 #include "WideIO.h"
 #include "WideIO2.h"
-#include "HBM.h"
-#include "SALP.h"
+#include <MemoryFactory.h>
 #include <fmt/format.h>
+#include <map>
+#include <ramulator_wrapper.h>
 using namespace ramulator;
 
 static map<string, function<MemoryBase *(const Config &, int)>> name_to_func = {
@@ -31,74 +31,69 @@ static map<string, function<MemoryBase *(const Config &, int)>> name_to_func = {
     {"SALP-MASA", &MemoryFactory<SALP>::create},
 };
 
-ramulator_wrapper::ramulator_wrapper(const ramulator::Config &configs, int cacheline, uint64_t &t_current_cycle) : componet(t_current_cycle)
-{
-    const string &std_name = configs["standard"];
-    assert(name_to_func.find(std_name) != name_to_func.end() && "unrecognized standard name");
-    mem = name_to_func[std_name](configs, cacheline);
-    Stats::statlist.output("mem_stats.txt");
-    tCK = mem->clk_ns();
+ramulator_wrapper::ramulator_wrapper(const ramulator::Config &configs,
+                                     int cacheline, uint64_t &t_current_cycle)
+    : componet(t_current_cycle) {
+  const string &std_name = configs["standard"];
+  assert(name_to_func.find(std_name) != name_to_func.end() &&
+         "unrecognized standard name");
+  mem = name_to_func[std_name](configs, cacheline);
+  Stats::statlist.output("mem_stats.txt");
+  tCK = mem->clk_ns();
 }
-ramulator_wrapper::~ramulator_wrapper()
-{
-    Stats::statlist.printall();
-    mem->finish();
-    delete mem;
+ramulator_wrapper::~ramulator_wrapper() {
+  fmt::print("total_read: {}\ntotal_write: {}\ntotal_cycle: {}\n",
+             total_requests_read, total_requests_write, cycle_in_memory);
+  Stats::statlist.printall();
+  mem->finish();
+  delete mem;
 }
-void ramulator_wrapper::finish()
-{
-    mem->finish();
+void ramulator_wrapper::finish() { mem->finish(); }
+void ramulator_wrapper::tick() {
+  cycle_in_memory++;
+  mem->tick();
 }
-void ramulator_wrapper::tick()
-{
-    mem->tick();
+void ramulator_wrapper::send(uint64_t addr, bool is_read) {
+  is_read ? total_requests_read++ : total_requests_write++;
+  this->in_queue.push({addr, is_read});
 }
-void ramulator_wrapper::send(uint64_t addr, bool is_read)
-{
-    this->in_queue.push({addr, is_read});
-}
-void ramulator_wrapper::call_back(ramulator::Request &req)
-{
-    outgoing_reqs--;
-    assert((long long)outgoing_reqs >= 0);
-    switch (req.type)
-    {
-    case Request::Type::READ:
-        out_queue.push(req.addr);
-        break;
+void ramulator_wrapper::call_back(ramulator::Request &req) {
+  outgoing_reqs--;
+  assert((long long)outgoing_reqs >= 0);
+  switch (req.type) {
+  case Request::Type::READ:
+    out_queue.push(req.addr);
+    break;
 
-    default:
-        assert(req.type == Request::Type::WRITE);
-        break;
+  default:
+    assert(req.type == Request::Type::WRITE);
+    break;
+  }
+}
+bool ramulator_wrapper::do_cycle() {
+  bool busy = false;
+  if (!in_queue.empty()) {
+    busy = true;
+    auto &req = in_queue.front();
+    auto r_req = Request(
+        req.first, req.second ? Request::Type::READ : Request::Type::WRITE,
+        [this](Request &req) { this->call_back(req); });
+    if (mem->send(r_req)) {
+      outgoing_reqs++;
+      in_queue.pop();
     }
+  }
+  this->tick();
+  return busy;
 }
-bool ramulator_wrapper::do_cycle()
-{
-    bool busy = false;
-    if (!in_queue.empty())
-    {
-        busy = true;
-        auto &req = in_queue.front();
-        auto r_req = Request(req.first, req.second ? Request::Type::READ : Request::Type::WRITE, [this](Request &req) { this->call_back(req); });
-        if (mem->send(r_req))
-        {
-            outgoing_reqs++;
-            in_queue.pop();
-        }
-    }
-    this->tick();
-    return busy;
+bool ramulator_wrapper::empty() const {
+  return in_queue.empty() and out_queue.empty() and outgoing_reqs == 0;
 }
-bool ramulator_wrapper::empty() const
-{
-    return in_queue.empty() and out_queue.empty() and outgoing_reqs == 0;
-}
-std::string ramulator_wrapper::get_internal_size() const
-{
-    return fmt::format("name in out outgoing\n mem {} {} {}", in_queue.size(), out_queue.size(), outgoing_reqs);
+std::string ramulator_wrapper::get_internal_size() const {
+  return fmt::format("name in out outgoing\n mem {} {} {}", in_queue.size(),
+                     out_queue.size(), outgoing_reqs);
 }
 
-std::string ramulator_wrapper::get_line_trace() const
-{
-    return fmt::format("{}", get_busy_percent());
+std::string ramulator_wrapper::get_line_trace() const {
+  return fmt::format("{}", get_busy_percent());
 }
