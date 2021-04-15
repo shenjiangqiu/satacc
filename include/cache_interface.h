@@ -16,6 +16,8 @@
 #include <enumerate.h>
 #include <ramulator_wrapper.h>
 #include <array>
+
+#include "utils.h"
 //use template to avoid expesive divide calculate
 class cache_stats
 {
@@ -123,7 +125,8 @@ private:
     bool is_ideal_dram;
     bool ideal_l3;
     unsigned num_ports;
-
+    int current_parallel_requests=0;
+    int average_parallel_requests=0;
     /* data */
 public:
     unsigned get_partition_id(uint64_t addr);

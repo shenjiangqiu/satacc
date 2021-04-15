@@ -33,7 +33,8 @@ bool watcher::do_cycle() {
   }
 
   //update the average.
-  average_inflight=average_inflight+((double)num_inflight_request-average_inflight)/double(current_cycle+1);
+  //FIXME there is a bug
+  update(average_inflight,num_inflight_request,current_cycle);
 
   return busy;
 }
@@ -104,6 +105,8 @@ bool watcher::from_read_watcher_to_mem() {
     if (current_size >= total_size) // in case the total size is 0
     {
       waiting_read_watcher_queue.pop_front();
+      num_inflight_request--;
+      assert(num_inflight_request>=0);
       sjq::inside_busy = false; // finished this task
     } else {
       busy = true;
@@ -116,7 +119,7 @@ bool watcher::from_read_watcher_to_mem() {
       outgoing_read_watcher_data++;
 
       current_size += 16;
-      if (current_size >= total_size) // in case the total size is 0
+      if (current_size >= total_size) //the end of the request has been sent
       {
         waiting_read_watcher_queue.pop_front();
       }

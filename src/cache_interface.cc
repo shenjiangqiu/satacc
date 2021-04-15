@@ -184,12 +184,15 @@ bool cache_interface::from_miss_q_to_dram() {
     busy = true;
     return busy;
   }
+
   // the tuple: first means is read, second is the address.
   if (!miss_queue.empty()) {
     busy = true;
     auto addr = miss_queue.front().second;
     // std::cout << "from missq:" << addr << std::endl;
     miss_queue.pop_front();
+    current_parallel_requests++;
+
     m_mem.send(addr, is_read);
   }
   return busy;
@@ -285,6 +288,7 @@ std::string cache_interface::get_line_trace() const {
       m_stats.read_watcher_data_miss, m_stats.read_watcher_value_miss,
       m_stats.read_clause_data_miss, m_stats.read_clause_value_miss,
       m_stats.write_watcher_list_miss, m_stats.write_clause_miss);
+  ret+=fmt::format("average_requests: {}\n",average_parallel_requests);
   return ret;
 }
 
@@ -347,6 +351,8 @@ bool cache_interface::do_cycle() {
   std::fill(this_busy.begin(), this_busy.end(), false); // fill all to not busy;
   busy |= m_mem.cycle();
   while (m_mem.return_avaliable()) {
+    current_parallel_requests--;
+    assert(current_parallel_requests >= 0);
     auto addr = m_mem.pop();
     dram_resp_queue.push_back(addr);
   }
@@ -362,6 +368,8 @@ bool cache_interface::do_cycle() {
       idles[i]++;
     }
   }
+  // update the inflight
+  update(average_parallel_requests, current_parallel_requests, current_cycle);
 
   return busy;
   // from missq to dram

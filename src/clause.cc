@@ -1,6 +1,7 @@
 #include "clause.h"
 #include "cache_interface.h"
 #include <ptr_copy.hpp>
+#include "utils.h"
 clause::clause(uint64_t &t) : componet(t) {}
 
 clause::~clause() {}
@@ -24,7 +25,8 @@ bool clause::do_cycle() {
       stall_other++;
     }
   }
-  average_inflight_request+=(current_inflight_request-average_inflight_request)/(double)(current_cycle+1);
+  //FIXME this is a bug
+  update(average_inflight_request,current_inflight_request,current_cycle);
   return busy;
 }
 
