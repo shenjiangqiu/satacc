@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "watcher.h"
 TEST_CASE("watcher_test", "[basic][core][componet]")
 {
