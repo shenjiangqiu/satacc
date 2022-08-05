@@ -8,3 +8,4 @@ test/dramsim3epoch.json
 src/depend.mk
 test/depend.mk
 build
+.xmake
