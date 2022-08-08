@@ -8,8 +8,8 @@
 #include <memreq_info.h>
 #include <new_intersim_wrapper.h>
 #include <req_addr.h>
+#include <rusttools.h>
 #include <sstream>
-
 namespace po = boost::program_options;
 
 namespace sjq {
@@ -55,7 +55,13 @@ void acc::add_hook_from_watcher_out_actions() {
         busy = true;
         auto &req = watchers[i]->out_send_queue.front();
         req->icnt_from = i;
-        req->icnt_to = req->as->get_clause_id(req->watcherId) % num_watchers;
+        if (this->rust_config.watcher_to_clause_type ==
+            sjqrusttools::WatcherToClauseType::Icnt) {
+
+          req->icnt_to = req->as->get_clause_id(req->watcherId) % num_watchers;
+        } else {
+          req->icnt_to = req->icnt_from;
+        }
         if (req->icnt_to == req->icnt_from) {
           watcher_to_clause_icnt->out_reqs[i].push_back(std::move(req));
         } else {
@@ -664,224 +670,230 @@ void acc::add_hook_from_watcher_icnt_to_watcher_writer() {
   });
 }
 
-acc::acc(unsigned t_num_watchers, unsigned t_num_clauses,
-         uint64_t &t_current_cycle)
-    : acc(t_num_watchers, t_num_clauses, 1 << 10, 16 << 20, t_current_cycle) {}
-
 void acc::parse_file() {
-  po::options_description config_file_options("all options");
-  std::map<std::string, int> int_map;
-  std::map<std::string, std::string> string_map;
+  // po::options_description config_file_options("all options");
+  // std::map<std::string, int> int_map;
+  // std::map<std::string, std::string> string_map;
 
-  config_file_options.add_options()("help", "print help infomation")(
-      "n_watchers", po::value<int>()->default_value(16)->notifier([&](int v) {
-        int_map["n_watchers"] = v;
-      }),
-      "the number of watchers")("n_clauses",
-                                po::value<int>()->default_value(16)->notifier(
-                                    [&](int v) { int_map["n_clauses"] = v; }),
-                                "the number of clauses")(
-      "mems", po::value<int>()->default_value(8)->notifier([&](int v) {
-        int_map["mems"] = v;
-      }),
-      "the number of mem partition")(
-      "icnt",
-      po::value<std::string>()->default_value("ideal")->notifier(
-          [&](std::string v) { string_map["icnt"] = v; }),
-      "the type of icnt")("seq", po::bool_switch()->default_value(false),
-                          "if enable seq mode")(
-      "ideal_memory", po::bool_switch()->default_value(false),
-      "if use ideal memory")("ideal_l3cache",
-                             po::bool_switch()->default_value(16),
-                             "if use ideal l3 cache")(
-      "multi_port", po::value<int>()->default_value(1)->notifier([&](int v) {
-        int_map["multi_port"] = v;
-      }),
-      "the number of ports for l3 cache to read in one cycle")(
-      "dram_config",
-      po::value<std::string>()
-          ->default_value("HBM-config.conf")
-          ->notifier([&](std::string v) { string_map["dram_config"] = v; }),
-      "name of the dram_config")(
-      "watcher_to_clause_icnt",
-      po::value<std::string>()->default_value("mesh")->notifier(
-          [&](std::string v) { string_map["watcher_to_clause_icnt"] = v; }),
-      "the type of the icnt connect watcher and clause")(
-      "watcher_to_writer_icnt",
-      po::value<std::string>()->default_value("mesh")->notifier(
-          [&](std::string v) { string_map["watcher_to_writer_icnt"] = v; }),
-      "the type of the icnt connect the watcher to the writer")(
-      "num_writer_entry",
-      po::value<int>()->default_value(64)->notifier(
-          [&](int v) { int_map["num_writer_entry"] = v; }),
-      "the number of entrys in writer")(
-      "num_writer_merge",
-      po::value<int>()->default_value(8)->notifier(
-          [&](int v) { int_map["num_writer_merge"] = v; }),
-      "the number of requests can be merged by one entry")(
-      "single_watcher", po::bool_switch()->default_value(false),
-      "restrice single watcher!");
+  // config_file_options.add_options()("help", "print help infomation")(
+  //     "n_watchers", po::value<int>()->default_value(16)->notifier([&](int v)
+  //     {
+  //       int_map["n_watchers"] = v;
+  //     }),
+  //     "the number of watchers")("n_clauses",
+  //                               po::value<int>()->default_value(16)->notifier(
+  //                                   [&](int v) { int_map["n_clauses"] = v;
+  //                                   }),
+  //                               "the number of clauses")(
+  //     "mems", po::value<int>()->default_value(8)->notifier([&](int v) {
+  //       int_map["mems"] = v;
+  //     }),
+  //     "the number of mem partition")(
+  //     "icnt",
+  //     po::value<std::string>()->default_value("ideal")->notifier(
+  //         [&](std::string v) { string_map["icnt"] = v; }),
+  //     "the type of icnt")("seq", po::bool_switch()->default_value(false),
+  //                         "if enable seq mode")(
+  //     "ideal_memory", po::bool_switch()->default_value(false),
+  //     "if use ideal memory")("ideal_l3cache",
+  //                            po::bool_switch()->default_value(16),
+  //                            "if use ideal l3 cache")(
+  //     "multi_port", po::value<int>()->default_value(1)->notifier([&](int v) {
+  //       int_map["multi_port"] = v;
+  //     }),
+  //     "the number of ports for l3 cache to read in one cycle")(
+  //     "dram_config",
+  //     po::value<std::string>()
+  //         ->default_value("HBM-config.conf")
+  //         ->notifier([&](std::string v) { string_map["dram_config"] = v; }),
+  //     "name of the dram_config")(
+  //     "watcher_to_clause_icnt",
+  //     po::value<std::string>()->default_value("mesh")->notifier(
+  //         [&](std::string v) { string_map["watcher_to_clause_icnt"] = v; }),
+  //     "the type of the icnt connect watcher and clause")(
+  //     "watcher_to_writer_icnt",
+  //     po::value<std::string>()->default_value("mesh")->notifier(
+  //         [&](std::string v) { string_map["watcher_to_writer_icnt"] = v; }),
+  //     "the type of the icnt connect the watcher to the writer")(
+  //     "num_writer_entry",
+  //     po::value<int>()->default_value(64)->notifier(
+  //         [&](int v) { int_map["num_writer_entry"] = v; }),
+  //     "the number of entrys in writer")(
+  //     "num_writer_merge",
+  //     po::value<int>()->default_value(8)->notifier(
+  //         [&](int v) { int_map["num_writer_merge"] = v; }),
+  //     "the number of requests can be merged by one entry")(
+  //     "single_watcher", po::bool_switch()->default_value(false),
+  //     "restrice single watcher!");
 
-  const std::map<std::string, std::set<std::string>> all_settings = {
-      {"n_watchers", {}},
-      {"n_clauses", {}},
-      {"mems", {}},
-      {"icnt", {"mesh", "ideal", "ring"}},
-      {"seq", {"true", "false"}},
-      {"ideal_memory", {"true", "false"}},
-      {"ideal_l3cache", {"true", "false"}},
-      {"multi_port", {}},
-      {"dram_config",
-       {"ALDRAM-config.cfg", "DDR4-config.cfg", "GDDR5-config.cfg",
-        "LPDDR3-config.cfg", "PCM-config.cfg", "STTMRAM-config.cfg",
-        "WideIO2-config.cfg", "DDR3-config.cfg", "DSARP-config.cfg",
-        "HBM-config.cfg", "LPDDR4-config.cfg", "SALP-config.cfg",
-        "TLDRAM-config.cfg", "WideIO-config.cfg"}},
-      {"watcher_to_clause_icnt", {"mesh", "ideal", "ring"}},
-      {"watcher_to_writer_icnt", {"mesh", "ideal", "ring"}},
-      {"num_writer_entry", {}},
-      {"num_writer_merge", {}},
-      {"single_watcher", {"true", "false"}}};
+  // const std::map<std::string, std::set<std::string>> all_settings = {
+  //     {"n_watchers", {}},
+  //     {"n_clauses", {}},
+  //     {"mems", {}},
+  //     {"icnt", {"mesh", "ideal", "ring"}},
+  //     {"seq", {"true", "false"}},
+  //     {"ideal_memory", {"true", "false"}},
+  //     {"ideal_l3cache", {"true", "false"}},
+  //     {"multi_port", {}},
+  //     {"dram_config",
+  //      {"ALDRAM-config.cfg", "DDR4-config.cfg", "GDDR5-config.cfg",
+  //       "LPDDR3-config.cfg", "PCM-config.cfg", "STTMRAM-config.cfg",
+  //       "WideIO2-config.cfg", "DDR3-config.cfg", "DSARP-config.cfg",
+  //       "HBM-config.cfg", "LPDDR4-config.cfg", "SALP-config.cfg",
+  //       "TLDRAM-config.cfg", "WideIO-config.cfg"}},
+  //     {"watcher_to_clause_icnt", {"mesh", "ideal", "ring"}},
+  //     {"watcher_to_writer_icnt", {"mesh", "ideal", "ring"}},
+  //     {"num_writer_entry", {}},
+  //     {"num_writer_merge", {}},
+  //     {"single_watcher", {"true", "false"}}};
 
-  po::variables_map vm;
-  po::store(po::parse_config_file("satacc_config.txt", config_file_options),
-            vm);
-  if (vm.count("help")) {
-    std::cout << config_file_options << std::endl;
-    std::cout.flush();
-    exit(-1);
-  }
+  // po::variables_map vm;
+  // po::store(po::parse_config_file("satacc_config.txt", config_file_options),
+  //           vm);
+  // if (vm.count("help")) {
+  //   std::cout << config_file_options << std::endl;
+  //   std::cout.flush();
+  //   exit(-1);
+  // }
 
-  const std::string input_file_name = "satacc_config.txt";
-  std::ifstream in(input_file_name);
-  std::string icnt_type;
-  std::map<std::string, std::string> acc_config;
-  std::string line;
-  // read the config
-  while (std::getline(in, line)) {
-    if (line[0] == '#' or line[0] == ',' or line[0] == ' ') {
-      // this line is comment
-      continue;
-    }
-    std::istringstream in_line(line);
-    std::string key;
-    if (std::getline(in_line, key, '=')) {
+  // const std::string input_file_name = "satacc_config.txt";
+  // std::ifstream in(input_file_name);
+  // std::string icnt_type;
+  // std::map<std::string, std::string> acc_config;
+  // std::string line;
+  // // read the config
+  // while (std::getline(in, line)) {
+  //   if (line[0] == '#' or line[0] == ',' or line[0] == ' ') {
+  //     // this line is comment
+  //     continue;
+  //   }
+  //   std::istringstream in_line(line);
+  //   std::string key;
+  //   if (std::getline(in_line, key, '=')) {
 
-      std::string value;
-      if (std::getline(in_line, value)) {
-        acc_config.insert({key, value});
-      }
-    }
-  }
-  for (auto &&config : acc_config) {
-    std::cout << fmt::format("{},{}\n", config.first, config.second);
-  }
-  // fisrt, valide the count
-  if (!(acc_config.size() == all_settings.size())) {
-    throw std::runtime_error("the number of settings are not equal");
-  }
-  for (auto &&config : acc_config) {
-    if (!all_settings.count(config.first)) {
-      throw std::runtime_error("no such setting!");
-    }
-    if (!all_settings.at(config.first).empty() and
-        !all_settings.at(config.first).count(config.second)) {
-      throw std::runtime_error("no such value!");
-    }
-  }
+  //     std::string value;
+  //     if (std::getline(in_line, value)) {
+  //       acc_config.insert({key, value});
+  //     }
+  //   }
+  // }
+  // for (auto &&config : acc_config) {
+  //   std::cout << fmt::format("{},{}\n", config.first, config.second);
+  // }
+  // // fisrt, valide the count
+  // if (!(acc_config.size() == all_settings.size())) {
+  //   throw std::runtime_error("the number of settings are not equal");
+  // }
+  // for (auto &&config : acc_config) {
+  //   if (!all_settings.count(config.first)) {
+  //     throw std::runtime_error("no such setting!");
+  //   }
+  //   if (!all_settings.at(config.first).empty() and
+  //       !all_settings.at(config.first).count(config.second)) {
+  //     throw std::runtime_error("no such value!");
+  //   }
+  // }
 
-  num_watchers = std::stoul(acc_config["n_watchers"]);
+  num_watchers = rust_config.n_watchers;
 
-  num_clauses = std::stoul(acc_config["n_clauses"]);
+  num_clauses = rust_config.n_clauses;
 
   // parse the number of mem partition
   unsigned num_mem;
 
-  num_mem = std::stoul(acc_config["mems"]);
-  num_writer_entry = std::stoul(acc_config["num_writer_entry"]);
-  num_writer_merge = std::stoul(acc_config["num_writer_merge"]);
+  num_mem = rust_config.mems;
+  num_writer_entry = rust_config.num_writer_entry;
+  num_writer_merge = rust_config.num_writer_merge;
 
   num_partition = num_mem;
   // parse the icnt type
 
-  auto icnt = acc_config["icnt"];
-  if (icnt == "mesh") {
+  auto icnt = rust_config.icnt;
+  if (icnt == sjqrusttools::IcntType::Mesh) {
     memory_read_icnt = new icnt_mesh(
         current_cycle, num_watchers + num_partition, 3, 1, 0, 64, 3);
-  } else if (icnt == "ring") {
+  } else if (icnt == sjqrusttools::IcntType::Ring) {
     memory_read_icnt = new icnt_ring(
         current_cycle, num_watchers + num_partition, 3, 1, 0, 64, 3);
-  } else if (icnt == "ideal") {
+  } else if (icnt == sjqrusttools::IcntType::Ideal) {
     memory_read_icnt =
         new icnt_ideal(current_cycle, num_watchers + num_partition);
   } else {
     memory_read_icnt = new icnt_mesh(
         current_cycle, num_watchers + num_partition, 3, 1, 0, 64, 3);
   }
-  enable_sequential = acc_config["seq"] == "true" ? true : false;
-  ideal_memory = acc_config["ideal_memory"] == "true" ? true : false;
-  ideal_l3cache = acc_config["ideal_l3cache"] == "true" ? true : false;
-  single_watcher = acc_config["single_watcher"] == "true" ? true : false;
-  auto number = std::stoul(acc_config["multi_port"]);
+  enable_sequential = rust_config.seq;
+  ideal_memory = rust_config.ideal_memory;
+  ideal_l3cache = rust_config.ideal_l3cache;
+  single_watcher = rust_config.single_watcher;
+  auto number = rust_config.multi_port;
   if (number > 1) {
     multi_l3cache_port = number;
   } else {
     multi_l3cache_port = 1;
   }
 
-  dram_config_file = acc_config["dram_config"];
-  auto watcher_icnt_s = acc_config["watcher_to_clause_icnt"];
-  if (watcher_icnt_s == "mesh") {
+  auto dram_config_file_type = rust_config.dram_config;
+
+  if (dram_config_file_type == sjqrusttools::DramType::DDR4) {
+    dram_config_file = "DDR4-config.cfg";
+  } else if (dram_config_file_type == sjqrusttools::DramType::HBM) {
+    dram_config_file = "HBM-config.cfg";
+  }
+  auto watcher_icnt_s = rust_config.watcher_to_clause_icnt;
+  if (watcher_icnt_s == sjqrusttools::IcntType::Mesh) {
     watcher_to_clause_icnt =
         new icnt_mesh(current_cycle, num_watchers, 3, 1, 0, 64, 3);
-  } else if (watcher_icnt_s == "ring") {
+  } else if (watcher_icnt_s == sjqrusttools::IcntType::Ring) {
     watcher_to_clause_icnt =
         new icnt_ring(current_cycle, num_watchers, 3, 1, 0, 64, 3);
-  } else if (watcher_icnt_s == "ideal") {
+  } else if (watcher_icnt_s == sjqrusttools::IcntType::Ideal) {
     watcher_to_clause_icnt = new icnt_ideal(current_cycle, num_watchers);
   } else {
     throw;
   }
 
-  watcher_icnt_s = acc_config["watcher_to_writer_icnt"];
-  if (watcher_icnt_s == "mesh") {
+  watcher_icnt_s = rust_config.watcher_to_writer_icnt;
+  if (watcher_icnt_s == sjqrusttools::IcntType::Mesh) {
     watcher_to_writer_icnt =
         new icnt_mesh(current_cycle, num_watchers, 3, 1, 0, 64, 3);
-  } else if (watcher_icnt_s == "ring") {
+  } else if (watcher_icnt_s == sjqrusttools::IcntType::Ring) {
     watcher_to_writer_icnt =
         new icnt_ring(current_cycle, num_watchers, 3, 1, 0, 64, 3);
-  } else if (watcher_icnt_s == "ideal") {
+  } else if (watcher_icnt_s == sjqrusttools::IcntType::Ideal) {
     watcher_to_writer_icnt = new icnt_ideal(current_cycle, num_watchers);
   } else {
     throw;
   }
 }
 
-acc::acc(unsigned t_num_watchers, unsigned t_num_clauses,
-         unsigned private_cache_size, unsigned l3_cache_size,
-         uint64_t &tcurrent_cycle)
-    : componet(tcurrent_cycle), private_cache_size(private_cache_size),
-      num_watchers(t_num_watchers), num_clauses(t_num_clauses) {
-
-  // read the configure file. will set num_watcher and num_clause again. so the
-  // previouse value will be override!
+acc::acc(uint64_t &tcurrent_cycle)
+    : componet(tcurrent_cycle),
+      rust_config(sjqrusttools::config_from_file("satacc_config.toml")),
+      private_cache_size(rust_config.private_cache_size),
+      num_watchers(rust_config.n_watchers), num_clauses(rust_config.n_clauses) {
+  // show the config
+  sjqrusttools::show_config(&rust_config);
+  // read the configure file. will set num_watcher and num_clause again. so
+  // the previouse value will be override!
   parse_file();
+  // parse rust config
   sjq::inside_busy = false;
 
   // add the componets s
 
   m_cache_interface = new cache_interface(
-      l3_cache_size, num_partition, ideal_memory, ideal_l3cache,
+      rust_config.l3_cache_size, num_partition, ideal_memory, ideal_l3cache,
       multi_l3cache_port, dram_config_file, current_cycle);
   m_componets.push_back((componet *)m_cache_interface);
-  for (unsigned i = 0; i < t_num_watchers; i++) {
+  for (unsigned i = 0; i < num_watchers; i++) {
     auto watcher_writer = new watcher_list_write_unit(
         current_cycle, num_writer_merge, num_writer_entry, num_watchers);
     m_watcher_write_unit.push_back(watcher_writer);
     m_componets.push_back(watcher_writer);
   }
 
-  for (unsigned i = 0; i < t_num_watchers; i++) {
+  for (unsigned i = 0; i < num_watchers; i++) {
     auto tclause_writer = new clause_writer(current_cycle);
     m_clause_write_unit.push_back(tclause_writer);
     m_componets.push_back(tclause_writer);

@@ -17,10 +17,10 @@
 #include <algorithm>
 #include <fmt/format.h>
 #include <functional>
-#include <string>
-
 #include <new_intersim_wrapper.h>
 #include <ramulator_wrapper.h>
+#include <rusttools.h>
+#include <string>
 
 namespace sjq {
 extern bool inside_busy;
@@ -31,6 +31,7 @@ class acc : public componet {
   using req_ptr_q_vec = std::vector<req_ptr_q>;
 
 private:
+  sjqrusttools::Config rust_config;
   unsigned long long total_memory_icnt_traffic = 0;
   unsigned long long total_watcher_clause_icnt_traffic = 0;
   unsigned long long total_watcher_writer_icnt_traffic = 0;
@@ -142,9 +143,7 @@ public:
 
   std::deque<req_ptr> in_m_trail;
 
-  acc(unsigned num_watchers, unsigned num_clauses, uint64_t &tcurrent_cycle);
-
-  acc(unsigned, unsigned, unsigned, unsigned, uint64_t &);
+  acc(uint64_t &tcurrent_cycle);
 
   ~acc();
 

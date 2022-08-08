@@ -1,7 +1,7 @@
 #include "clause.h"
 #include "cache_interface.h"
-#include <ptr_copy.hpp>
 #include "utils.h"
+#include <ptr_copy.hpp>
 clause::clause(uint64_t &t) : componet(t) {}
 
 clause::~clause() {}
@@ -25,8 +25,8 @@ bool clause::do_cycle() {
       stall_other++;
     }
   }
-  //FIXME this is a bug
-  update(average_inflight_request,current_inflight_request,current_cycle);
+  // FIXME this is a bug
+  update(average_inflight_request, current_inflight_request, current_cycle);
   return busy;
 }
 
@@ -168,12 +168,12 @@ bool clause::process_waiting_to_out() // process the clause and send out
       out_clause_write_queue.push_back(std::move(req));
       assert(out_clause_write_queue.back()->clauseId + 1 ==
              out_clause_write_queue.back()
-                 ->as->get_clause_detail(watcherId)
+                 ->as->get_clause_literals_addr(watcherId)
                  .size());
 
       clause_process_waiting_queue.pop_front();
       current_inflight_request--;
-      assert(current_inflight_request>=0);
+      assert(current_inflight_request >= 0);
     }
     // else just continue, we are processing...;
 

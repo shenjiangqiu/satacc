@@ -1,7 +1,7 @@
 
 
-#include <catch2/catch_test_macros.hpp>
 #include "watcher.h"
+#include <catch2/catch_test_macros.hpp>
 
 #include "clause.h"
 
@@ -21,16 +21,16 @@ TEST_CASE("Clause", "[basic][core][componet]") {
   new_wrap1->add_clause_literal(0, 2);
   new_wrap1->add_clause_literal(0, 3);
 
-  new_wrap1->add_detail(0, 11);
-  new_wrap1->add_detail(0, 12);
-  new_wrap1->add_detail(0, 13);
+  new_wrap1->add_clause_literals_addr(0, 11);
+  new_wrap1->add_clause_literals_addr(0, 12);
+  new_wrap1->add_clause_literals_addr(0, 13);
 
   new_wrap1->add_clause_literal(10, 0);
   new_wrap1->add_clause_literal(10, 2);
   new_wrap1->add_clause_literal(10, 3);
-  new_wrap1->add_detail(10, 11);
-  new_wrap1->add_detail(10, 12);
-  new_wrap1->add_detail(10, 13);
+  new_wrap1->add_clause_literals_addr(10, 11);
+  new_wrap1->add_clause_literals_addr(10, 12);
+  new_wrap1->add_clause_literals_addr(10, 13);
 
   auto req1 = std::make_unique<cache_interface_req>(AccessType::ReadWatcherData,
                                                     0, 0, 0, new_wrap1);
