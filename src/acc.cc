@@ -60,6 +60,8 @@ void acc::add_hook_from_watcher_out_actions() {
 
           req->icnt_to = req->as->get_clause_id(req->watcherId) % num_watchers;
         } else {
+          assert(rust_config.watcher_to_clause_type ==
+                 sjqrusttools::WatcherToClauseType::Streight);
           req->icnt_to = req->icnt_from;
         }
         if (req->icnt_to == req->icnt_from) {
